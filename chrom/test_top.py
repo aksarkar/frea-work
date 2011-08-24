@@ -43,6 +43,5 @@ if __name__ == '__main__':
     print('cell_type,state,p,fold')
     candidates = [[4, 5, 11, 12], [11, 12], [4, 5], [11], [12], [4], [5]]
     print('\n'.join(test(data, cell_type, states, top)
-                     for cell_type in reader.fieldnames[2:]
-                     for states in candidates))
-    
+                    for cell_type in reader.fieldnames[2:]
+                    for states in candidates))
