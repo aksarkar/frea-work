@@ -3,12 +3,17 @@
 library(ggplot2)
 library(Cairo)
 
+CairoFonts(regular="DejaVu Sans")
 args <- commandArgs(TRUE)
 D <- read.csv(args[1])
+D$state <- factor(D$state, labels=c('11','12','11,12','4','5','4,5','4,5,11,12'))
+D$sig <- factor(D$p < .05 / 63, labels=c('', '\U2217'))
 hi <- ceiling(max(-log10(D$p)))
-p <- (qplot(data=D, x=state, y=cell_type, fill=-log10(p), label=fold, size=I(4),
-            geom=c('tile', 'text'), xlab = 'State', ylab='Cell type') +
+p <- (qplot(data=D, x=state, y=cell_type, fill=-log10(p), label=sig, size=I(4), 
+            geom=c('tile', 'text'), xlab = 'Enhancer state', ylab='Cell type') +
       scale_fill_gradient(low='white', high='blue', limits=c(0, hi)) +
+      scale_x_discrete(breaks=c('11','12','11,12','4','5','4,5','4,5,11,12'),
+                       labels=(c('4','5','strong','6','7','weak','all'))) +
       coord_equal() +
       theme_bw())
 Cairo(file='out.pdf', type='pdf', dpi=96)
