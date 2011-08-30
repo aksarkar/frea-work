@@ -34,7 +34,8 @@ if __name__ == '__main__':
     filter_comment = (x for x in sys.stdin if x.strip() and x[0] != '#')
     reader = csv.DictReader(filter_comment, delimiter='\t')
     filter_missing_p = (row for row in reader if row['P-value'])
-    annots = it.chain.from_iterable(lookup_dnase(row, cur, conn) for row in filter_missing_p)
+    annots = it.chain.from_iterable(lookup_dnase(row, cur, conn) for 
+                                    row in filter_missing_p)
     print('rsid,p,cell_type')
     for row in annots:
         print(*row, sep=',')
