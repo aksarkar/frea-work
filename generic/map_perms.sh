@@ -10,7 +10,7 @@
 
 perm_test="/seq/compbio-hp/GWAS/enrichment/scripts/perm_test/perm_test"
 t=$(mktemp -p $PT_WORK)
-python "$SCRIPTS/filter.py" \
-    $(sed -ne "$LSB_JOBINDEX p" "$PT_WORK/joblist") < "$PT_WORK/annot" > $t
+$SCRIPTS/filter $PT_WORK/annot \
+    $(sed -ne "$LSB_JOBINDEX s/,/ /p" $PT_WORK/joblist) > $t
 $perm_test < $t > "$PT_WORK/map_perms.$(printf "%03d" $LSB_JOBINDEX)"
 rm $t

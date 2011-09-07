@@ -1,5 +1,4 @@
 #!/bin/bash
-#BSUB -J map_inputs[1-4216]%4
 #BSUB -o /dev/null
 #BSUB -q compbio-week
 
@@ -17,9 +16,9 @@ export PT_WORK="$work/$LSB_JOBINDEX"
 
 infile=$(sed -ne "$LSB_JOBINDEX p" $JOBLIST)
 
-python $SCRIPTS/gen_joblist.py $infile > "$PT_WORK/joblist"
+$SCRIPTS/gen_joblist > "$PT_WORK/joblist"
 
-zcat $infile | python $SCRIPTS/annotate.py > "$PT_WORK/annot"
+$SCRIPTS/annotate $infile > "$PT_WORK/annot"
 
 export SCRIPTS
 map=$(bsub -J "map_perms[1-$(wc -l < $PT_WORK/joblist)]" \
