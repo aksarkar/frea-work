@@ -12,8 +12,5 @@
 generic="/seq/compbio-hp/GWAS/enrichment/scripts/generic"
 export SCRIPTS=$1
 export JOBLIST=$2
-map=$(bsub -J "map_inputs[1-$(wc -l < $2)]" < "$generic/map_inputs.sh" | \
+map=$(bsub -J "map_inputs[1-$(wc -l < $2)]%8" < "$generic/map_inputs.sh" | \
     sed -re "s/.*<([[:digit:]]*)>.*/\1/")
-bsub -J reduce_inputs -q compbio-week -w "done($map)" -o /dev/null \
-    'python "$generic/reduce_inputs.py" >/broad/shptmp/aksarkar/result' \
-    >/dev/null

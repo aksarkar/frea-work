@@ -8,7 +8,5 @@
 
 # Usage: PT_WORK=<workdir> PT_OUT=<outfile> bsub < reduce_perms.sh
 
-work="/broad/shptmp/aksarkar/"
-sed -i -e "s/ /,/" $PT_WORK/joblist
-cat $PT_WORK/map_perms.* | paste -d, $PT_WORK/joblist - >$PT_OUT
+paste -d, $PT_WORK/joblist $PT_WORK/map_perms.out >$PT_OUT
 rm -r $PT_WORK
