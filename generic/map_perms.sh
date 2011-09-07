@@ -1,7 +1,6 @@
 #!/bin/bash
 #BSUB -o /dev/null
 #BSUB -q compbio-week
-#BSUB -sp 100
 
 # Generic mapper for permutations
 # Author: Abhishek Sarkar <aksarkar@mit.edu>

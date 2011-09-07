@@ -16,7 +16,7 @@ export PT_WORK="$work/$LSB_JOBINDEX"
 
 infile=$(sed -ne "$LSB_JOBINDEX p" $JOBLIST)
 
-$SCRIPTS/gen_joblist > "$PT_WORK/joblist"
+$SCRIPTS/gen_joblist $infile > "$PT_WORK/joblist"
 
 $SCRIPTS/annotate $infile > "$PT_WORK/annot"
 

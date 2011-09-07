@@ -7,6 +7,7 @@ Usage: python reduce_inputs.py
 """
 
 import csv
+import os
 import sys
 
 def annot(i):
