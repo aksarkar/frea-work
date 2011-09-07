@@ -1,15 +1,18 @@
+#!/bin/env python
 """Lookup DNAse peaks for SNPs
 
 Author: Abhishek Sarkar <aksarkar@mit.edu>
 
-Usage: python3 annotate_dnase.py
+Usage: annotate INPUTFILE
 
-Expects (uncompressed) dbGaP analysis file on stdin. Writes (rsid,
-p-value, cell type) triples to stdout. Filters SNPs with missing
+INPUTFILE - gzip'ed dbGaP analysis file 
+
+Writes (rsid, p-value, cell type) triples to stdout. Filters SNPs with missing
 p-values.
 
 """
 import csv
+import gzip
 import itertools as it
 import re
 import sys
@@ -31,11 +34,13 @@ if __name__ == '__main__':
     conn = pymysql.connect(db='HaploReg', host='calcium', user='HaploReg',
                            passwd='HaploReg')
     cur = conn.cursor()
-    filter_comment = (x for x in sys.stdin if x.strip() and x[0] != '#')
-    reader = csv.DictReader(filter_comment, delimiter='\t')
-    filter_missing_p = (row for row in reader if row['P-value'])
-    annots = it.chain.from_iterable(lookup_dnase(row, cur, conn) for 
-                                    row in filter_missing_p)
-    print('rsid,p,cell_type')
-    for row in annots:
-        print(*row, sep=',')
+    with gzip.open(sys.argv[1]) as f:
+        decode = (str(x, 'ascii') for x in f)
+        filter_comment = (x for x in decode if x.strip() and x[0] != '#')
+        reader = csv.DictReader(filter_comment, delimiter='\t')
+        filter_missing_p = (row for row in reader if row['P-value'])
+        annots = it.chain.from_iterable(lookup_dnase(row, cur, conn) for 
+                                        row in filter_missing_p)
+        print('rsid,p,cell_type')
+        for row in annots:
+            print(*row, sep=',')

@@ -1,10 +1,12 @@
+#!/bin/env python
 import csv
 import gzip
 import sys
 
-lookup = set(row['rsid'] for row in csv.DictReader(sys.stdin) if 
-             row['cell_type'] == sys.argv[1])
-with gzip.open(sys.argv[2]) as f:
+with open(sys.argv[1]) as f:
+    lookup = set(row['rsid'] for row in csv.DictReader(f) if 
+                 row['cell_type'] == sys.argv[2])
+with gzip.open(sys.argv[3]) as f:
     decode = (str(x, 'ascii') for x in f)
     filter_comment = (x for x in decode if x.strip() and x[0] != '#')
     r = csv.DictReader(filter_comment, delimiter='\t')
