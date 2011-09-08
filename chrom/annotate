@@ -60,3 +60,4 @@ if __name__ == '__main__':
         print('rsid', 'p', *celltypes, sep=',')
         for rsid, p, annot in filter_missing_annot:
             print(rsid, p, *annot, sep=',')
+    conn.close()

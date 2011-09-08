@@ -44,3 +44,4 @@ if __name__ == '__main__':
         print('rsid,p,cell_type')
         for row in annots:
             print(*row, sep=',')
+    conn.close()
