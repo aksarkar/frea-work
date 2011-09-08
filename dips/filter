@@ -1,0 +1,2 @@
+#!/bin/bash
+bzcat $2 | intersectBed -a $1 -b stdin -c | sort -g -k5 | cut -f6

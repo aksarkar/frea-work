@@ -1,0 +1,2 @@
+#!/bin/bash
+find /seq/compbio-hp/aksarkar/ -name "dips*"

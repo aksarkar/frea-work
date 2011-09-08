@@ -1,0 +1,4 @@
+#!/bin/bash
+find /seq/compbio-hp/aksarkar/ -name "dips*" | \
+    parallel ln -s {} .
+python $(cd -P $(dirname $0) && pwd)/dbgap_to_bed.py $1
