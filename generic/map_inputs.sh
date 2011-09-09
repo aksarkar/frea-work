@@ -5,24 +5,14 @@
 # Generic mapper for permutation tests
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
 
-# Usage: JOBLIST=<joblist> SCRIPTS=<scriptdir> bsub < map_inputs.sh
+# Usage: ENR_TEST=<test> ENR_JOBLIST=<joblist> ENR_HELPERS=<scriptdir>
+#        bsub < map_inputs.sh
 
-basepath="/seq/compbio-hp/GWAS"
-generic="$basepath/enrichment/scripts/generic"
-work="/broad/shptmp/aksarkar"
-
-mkdir "$work/$LSB_JOBINDEX"
-export PT_WORK="$work/$LSB_JOBINDEX"
-
-infile=$(sed -ne "$LSB_JOBINDEX p" $JOBLIST)
-
-$SCRIPTS/gen_joblist $infile > "$PT_WORK/joblist"
-
-$SCRIPTS/annotate $infile > "$PT_WORK/annot"
-
-export SCRIPTS
-map=$(bsub -J "map_perms" \
-    < "$generic/map_perms.sh" | \
-    sed -re "s/.*<([[:digit:]]*)>.*/\1/")
-PT_OUT="$work/map_inputs.$LSB_JOBINDEX" \
-    bsub -w "done($map)" < "$generic/reduce_perms.sh"
+export ENR_WORK="/seq/compbio-hp/aksarkar/$LSB_JOBINDEX"
+mkdir $ENR_WORK
+infile=$(sed -ne "$LSB_JOBINDEX p" $ENR_JOBLIST)
+$ENR_HELPERS/gen_joblist $infile > "$ENR_WORK/joblist"
+$ENR_HELPERS/annotate $infile > "$ENR_WORK/annot"
+export ENR_HELPERS
+export ENR_TEST
+bsub -J "map_perms" < $(cd $(dirname $0) && pwd)/map_perms.sh >/dev/null

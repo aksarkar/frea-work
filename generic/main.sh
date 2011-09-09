@@ -2,15 +2,15 @@
 # Generic top level for enrichment tests
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
 
-# Usage: main.sh <scriptdir> <joblist>
+# Usage: main.sh <helpers> <test> <joblist>
 
-# The script directory must contain:
+# The helpers directory must contain:
 # annotate - extract feature annotations
 # filter - preprocess annotations for each sub-task
 # gen_joblist - generate arguments for filter (per sub-task)
 
-generic="/seq/compbio-hp/GWAS/enrichment/scripts/generic"
-export SCRIPTS=$1
-export JOBLIST=$2
-map=$(bsub -J "map_inputs[1-$(wc -l < $2)]%8" < "$generic/map_inputs.sh" | \
-    sed -re "s/.*<([[:digit:]]*)>.*/\1/")
+export ENR_HELPERS=$1
+export ENR_TEST=$2
+export ENR_JOBLIST=$3
+bsub -J "map_inputs[1-$(wc -l < $2)]%8" < \
+    $(cd $(dirname $0) && pwd)/map_inputs.sh >/dev/null
