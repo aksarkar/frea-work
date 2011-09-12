@@ -39,8 +39,9 @@ def lookup_state(rsid, cur, thresh=0, depth=0):
     if thresh <= 1 and depth < 1:
         cur.execute(ld_query.format(conn.escape(rsid)))
         if cur.rowcount:
-            states.extend(lookup_state(marker, cur, thresh, depth + 1) for marker, ld in 
-                          parse(cur.fetchone()[0]) if float(ld) >= thresh)
+            states.extend(lookup_state(marker, cur, thresh, depth + 1) 
+                          for marker, ld in parse(cur.fetchone()[0]) 
+                          if float(ld) >= thresh)
     return [ft.reduce(op.or_, x) for x in zip(*states)]
 
 if __name__ == '__main__':
