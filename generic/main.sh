@@ -12,5 +12,6 @@
 export ENR_HELPERS=$1
 export ENR_TEST=$2
 export ENR_JOBLIST=$3
-bsub -J "map_inputs[1-$(wc -l < $2)]%8" < \
-    $(cd $(dirname $0) && pwd)/map_inputs.sh >/dev/null
+export ENR_GENERIC="$HOME/code/enr/generic/"
+bsub -J "map_inputs[1-$(wc -l < $3)]%8" < \
+    $ENR_GENERIC/map_inputs.sh >/dev/null
