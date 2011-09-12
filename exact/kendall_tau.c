@@ -9,7 +9,10 @@ typedef struct avl {
   double key;
   struct avl *left, *right;
   int height;
-  int count;  // needed for Kendall tau
+
+  // needed for Kendall tau
+  int count;
+  int nbefore;
 } avl_t;
 
 static inline int max(int a, int b) {
@@ -25,7 +28,7 @@ static inline int avl_height(avl_t *avl) {
 }
 
 static inline void avl_update(avl_t *avl) {
-  avl->count = avl_count(avl->left) + avl_count(avl->right) + 1;
+  avl->count = avl_count(avl->right) + avl_count(avl->left) + 1;
   avl->height = max(avl_height(avl->left), avl_height(avl->right)) + 1;
 }
 
@@ -51,7 +54,7 @@ avl_t *avl_rotr(avl_t *avl) {
   return result;
 }
 
-avl_t *avl_insert(avl_t *avl, double key) {
+avl_t *avl_insert(avl_t *avl, double key, int *nbefore) {
   if (avl == NULL) {
     avl = malloc(sizeof(avl_t));
     assert(avl != NULL);
@@ -62,7 +65,7 @@ avl_t *avl_insert(avl_t *avl, double key) {
     avl->count = 0;
   }
   else if (key < avl->key) {
-    avl->left = avl_insert(avl->left, key);
+    avl->left = avl_insert(avl->left, key, nbefore);
     if (avl_height(avl->left) > avl_height(avl->right) + 1) {
       if (key < avl->left->key) {
         avl = avl_rotl(avl);
@@ -74,7 +77,8 @@ avl_t *avl_insert(avl_t *avl, double key) {
     }
   }
   else if (key > avl->key) {
-    avl->right = avl_insert(avl->right, key);
+    *nbefore += avl_count(avl->left) + 1;
+    avl->right = avl_insert(avl->right, key, nbefore);
     if (avl_height(avl->right) > avl_height(avl->left) + 1) {
       if (key > avl->right->key) {
         avl = avl_rotr(avl);
@@ -89,21 +93,6 @@ avl_t *avl_insert(avl_t *avl, double key) {
   return avl;
 }
 
-int avl_lookup(avl_t *avl, double key) {
-  if (avl == NULL) {
-    return 0;
-  }
-  if (avl->key == key) {
-    return avl_count(avl->left);
-  }
-  else if (avl->key > key) {
-    return avl_lookup(avl->left, key);
-  }
-  else {
-    return 1 + avl_count(avl->left) + avl_lookup(avl->right, key);
-  }
-}
-
 void avl_free(avl_t *avl) {
   if (avl == NULL) {
     return;
@@ -113,19 +102,23 @@ void avl_free(avl_t *avl) {
   free(avl);
 }
 
-double kendall_tau(double *ys, int n, int offset) {
-  int count = 0;
+void nbefore(double *ys, int *zs, int n) {
   avl_t *avl = NULL;
-  for (int i = offset; i < n; i++) {
-    avl = avl_insert(avl, ys[i]);
-    count += avl_lookup(avl, ys[i]);
-  }
-  for (int i = 0; i < offset; i++) {
-    avl = avl_insert(avl, ys[i]);
-    count += avl_lookup(avl, ys[i]);
+  for (int i = 0; i < n; i++) {
+    avl = avl_insert(avl, ys[i], &zs[i]);
   }
   free(avl);
-  return 4. * count / (n * (n - 1)) - 1;
+}
+
+static inline void update(double *ys, int *zs, int i, int j, long *test) {
+  if (ys[i] > ys[j]) {
+    zs[j] = max(zs[j] - 1, 0);
+    *test += zs[j];
+  }
+  else {
+    zs[i]++;
+    *test++;
+  }
 }
 
 int main() {
@@ -136,5 +129,25 @@ int main() {
   for (int i = 0; i < n; i++) {
     scanf("%lf", &ys[i]);
   }
-  printf("%lf\n", kendall_tau(ys, n, 0));
+  int *zs = calloc(n, sizeof(int));
+  nbefore(ys, zs, n);
+  long orig = 0;
+  for (int i = 0; i < n; i++) {
+    orig += zs[i];
+  }
+  int count = 0;
+  for (int i = 1; i < n; i++) {
+    long test = 0;
+    zs[i] = 0;
+    for (int j = i + 1; j < n; j++) {
+      update(ys, zs, i, j, &test);
+    }
+    for (int j = 0; j < i; j++) {
+      update(ys, zs, i, j, &test);
+    }
+    if (test >= orig) {
+      count++;
+    }
+  }
+  printf("%d\n", count);
 }
