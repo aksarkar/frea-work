@@ -2,6 +2,7 @@
 #BSUB -o /dev/null
 #BSUB -J map_perms
 #BSUB -n 1,32
+#BSUB -R "span[hosts=1]"
 #BSUB -q compbio-week
 
 # Generic mapper for permutations
