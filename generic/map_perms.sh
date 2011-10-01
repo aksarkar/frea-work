@@ -12,6 +12,6 @@
 #        bsub < map_perms.sh
 
 sed -e "s/,/ /" $ENR_WORK/joblist | \
-    parallel -j $LSB_DJOB_NUMPROC -C' ' \
+    parallel -j $LSB_DJOB_NUMPROC -C' ' --tmpdir=/broad/shptmp/aksarkar \
     "$ENR_HELPERS/filter $ENR_WORK/annot {} | $ENR_TEST" | \
     paste -d, $ENR_WORK/joblist - > $ENR_WORK/out
