@@ -1,0 +1,2 @@
+#!/bin/bash
+bzcat $HOME/hp/chrom/$1-states.bed.bz2 | grep $2 | intersectBed -a $3 -b stdin -c
