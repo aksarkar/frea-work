@@ -2,9 +2,8 @@ import csv
 import gzip
 import sys
 
-with gzip.open(sys.argv[1]) as f:
-    decode = (str(x, 'ascii') for x in f)
-    filter_comment = (x for x in decode if x.strip() and x[0] != '#')
+if __name__ == '__main__':
+    filter_comment = (x for x in sys.stdin if x.strip() and x[0] != '#')
     reader = csv.DictReader(filter_comment, delimiter='\t')
     filter_missing = (row for row in reader if row['P-value'] and 
                       row['Chr Position'] and row['Chr ID'])
