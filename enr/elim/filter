@@ -1,0 +1,5 @@
+#!/bin/bash
+bzcat $HOME/hp/chromhmm/$1-states.bed.bz2 | grep $2 | \
+    intersectBed -v -a stdin -b $4 | \
+    intersectBed -a $3 -b stdin -c | \
+    sort -g -k5
