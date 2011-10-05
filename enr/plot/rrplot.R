@@ -1,5 +1,8 @@
+# RR plots for enrichment down the rank list
+# Author: Abhishek Sarkar <aksarkar@mit.edu>
 library(ggplot2)
 library(Cairo)
+
 args <- commandArgs(TRUE)
 D <- read.csv(args[1])
 D$denom = rep(tail(D$expected, length(table(D$feature))), length.out=length(D$count))
@@ -17,7 +20,8 @@ scale_state_aggregate <-
   scale_color_manual(name='State (aggregate)',
                      values=c('promoter' = '#ff0000', 'enhancer' = '#faca00',
                        'insulator' = '#09befe', 'transcribed' = '#00b050',
-                       'repressed' = '#7f7f7f', 'other' = 'black'))
+                       'repressed' = '#7f7f7f', 'other' = 'black',
+                       'coding' = '#005c1f'))
 
 p <- (qplot(data=subset(D, total < 150000), x=total, y=dev, geom='line',
             size=I(.5), color=feature, xlab='Rank', ylab='Deviation') + 
