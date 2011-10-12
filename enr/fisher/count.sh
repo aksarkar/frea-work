@@ -18,11 +18,11 @@ do
     for e in ${enh[@]}
     do
         echo "$c $e"
-        bzcat $HOME/hp/chrom/$c-states.bed.bz2 | grep $e | \
+        bzcat $HOME/hp/chromhmm/$c-states.bed.bz2 | grep $e | \
             intersectBed -a $top -b stdin -c >$work
         grep '1$' $work | wc -l
 
-        bzcat $HOME/hp/chrom/$c-states.bed.bz2 | grep $e | \
+        bzcat $HOME/hp/chromhmm/$c-states.bed.bz2 | grep $e | \
             intersectBed -a $not -b stdin -c >$work
         grep '1$' $work | wc -l
     done
