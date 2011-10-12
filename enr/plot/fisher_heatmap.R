@@ -17,8 +17,8 @@ hi <- 12
 p <- (qplot(data=D, x=state, y=cell_type, fill=fold,
             label=sprintf("%.1g", p), size=I(3), 
             geom=c('tile', 'text'), xlab = 'Enhancer state', ylab='Cell type') +
-      scale_fill_gradient2(low='#ff0000', mid='white', high=muted('blue'),
-                           midpoint=1, limits=c(0, hi)) +
+      scale_fill_gradient2(high='#ff0000', mid='white', low='#b0b0ff',
+                           midpoint=0) +
       scale_x_discrete(limits=c('strong', 'weak', 'all')) +
       coord_equal() +
       theme_bw())
