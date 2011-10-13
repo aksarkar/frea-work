@@ -1,18 +1,16 @@
 import csv
-import itertools as it
 import functools as ft
-import math
+import operator as op
 import sys
 
-import annotate
 from bitvector import bitvector as bv
 
-classes = {'promoter': [1, 2, 14],
-           'enhancer': [4, 5, 11, 12],
-           'insulator': [0],
-           'transcribed': [6, 10, 13],
-           'repressed': [9],
-           'other': [3, 7, 8]}
+classes = {'promoter': range(1, 4),
+           'enhancer': range(4, 8),
+           'insulator': [8],
+           'transcribed': range(9, 12),
+           'repressed': [12],
+           'other': range(13, 16)}
 
 binsize = int(sys.argv[1])
 include = sys.argv[2:]
@@ -36,8 +34,8 @@ for i in range(0, len(data), binsize):
     count = [c + d for c, d in zip(count, bincounts)]
     if aggregate:
         for k, v in classes.items():
-            w.writerow([i + binsize, k, sum(count[j] for j in v), 
-                        sum(int((i + binsize) * expected[j]) for j in v)])
+            w.writerow([i + binsize, k, sum(count[j - 1] for j in v), 
+                        sum(int((i + binsize) * expected[j - 1]) for j in v)])
     else:
         for j, x in enumerate(count):
             w.writerow([i + binsize, j, x, int((i + binsize) * expected[j])])
