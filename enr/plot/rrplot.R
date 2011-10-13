@@ -21,7 +21,7 @@ scale_state_aggregate <-
                      values=c('promoter' = '#ff0000', 'enhancer' = '#faca00',
                        'insulator' = '#09befe', 'transcribed' = '#00b050',
                        'repressed' = '#7f7f7f', 'other' = 'black',
-                       'coding' = '#005c1f'))
+                       'coding' = '#005c1f', 'diffexpr' = '#0060a0'))
 
 p <- (qplot(data=subset(D, total < 150000), x=total, y=dev, geom='line',
             size=I(.5), color=feature, xlab='Rank', ylab='Deviation') + 
