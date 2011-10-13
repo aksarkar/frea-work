@@ -3,8 +3,6 @@ import functools as ft
 import operator as op
 import sys
 
-from bitvector import bitvector as bv
-
 classes = {'promoter': range(1, 4),
            'enhancer': range(4, 8),
            'insulator': [8],
