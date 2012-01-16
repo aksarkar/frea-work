@@ -17,6 +17,7 @@ p <- (qplot(data=D, x=state, y=cell_type, fill=-log10(p),
             geom=c('tile', 'text'), xlab = 'Enhancer state', ylab='Cell type') +
       scale_fill_gradient2(high='#ff0000', mid='white', low='#b0b0ff',
                            limits=c(0, hi), midpoint=mid) +
+      scale_x_discrete(limits=c('strong', 'weak', 'all')) +
       coord_equal() +
       theme_bw())
 Cairo(file='out.pdf', type='pdf', dpi=96, width=4, height=6, units='in')
