@@ -7,4 +7,5 @@
 # Reverse HapMap LD files
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
 
-sort -g -k2 $HOME/hp/hapmap/ld_chr${LSB_JOBINDEX}_CEU.txt >$HOME/hp/hapmap/ld_chr${LSB_JOBINDEX}_rev.txt
+sort -g -k2 $HOME/hp/hapmap/ld_chr${LSB_JOBINDEX}_CEU.txt | \
+    awk '{t = $1; $1 = $2; $2 = t}' >$HOME/hp/hapmap/ld_chr${LSB_JOBINDEX}_rev.txt

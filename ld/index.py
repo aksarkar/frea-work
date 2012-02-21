@@ -29,4 +29,4 @@ if __name__ == '__main__':
     with open('reverse_index.csv', 'w') as f:
         for i in range(1, 23):
             index(os.path.expanduser('~/hp/hapmap/ld_chr{}_rev.txt').format(i),
-                  lambda s: int(s.split()[1]), i, f)
+                  lambda s: int(s.split()[0]), i, f)
