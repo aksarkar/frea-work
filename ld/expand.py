@@ -33,9 +33,9 @@ def lookup(chrom, pos, thresh, outfile):
     """Look up LD in both directions"""
     print(fmt.format(chrom, pos - 1, pos, pos))
     helper(os.path.expanduser('~/hp/hapmap/ld_chr{}_CEU.txt'),
-                              forward, chrom, pos, thresh, outfile)
+           forward, chrom, pos, thresh, outfile)
     helper(os.path.expanduser('~/hp/hapmap/ld_chr{}_rev.txt'),
-                              reverse, chrom, pos, thresh, outfile)
+           reverse, chrom, pos, thresh, outfile)
 
 if __name__ == '__main__':
     with open(os.path.expanduser('~/hp/hapmap/forward_index.csv')) as f:
