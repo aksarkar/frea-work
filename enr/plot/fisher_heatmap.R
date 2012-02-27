@@ -12,13 +12,12 @@ D$cell_type <- factor(D$cell_type,
                         'HepG2', 'H1', 'GM12878'))
 hi <- 12
 p <- (qplot(data=D, x=state, y=cell_type, fill=fold,
-            label=sprintf("%.1g", p), size=I(3), 
+            label=sprintf("%.1g", p), size=I(4), 
             geom=c('tile', 'text'), xlab = 'Enhancer state', ylab='Cell type') +
-      scale_fill_gradient2(high='#ff0000', mid='white', low='#b0b0ff',
-                           midpoint=1, limits=c(0, hi)) +
+      scale_fill_gradient2(name='Fold enrichment', high='#ff0000', mid='white',
+                           low='#b0b0ff', midpoint=1, limits=c(0, hi)) +
       scale_x_discrete(limits=c('strong', 'weak', 'all')) +
-      coord_equal() +
       theme_bw())
-CairoPDF(file='out.pdf', width=4, height=6)
+CairoPDF(file='out.pdf', width=4.5, height=6)
 print(p)
 dev.off()
