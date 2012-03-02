@@ -2,8 +2,8 @@
 
 Author: Abhishek Sarkar
 
-Expects (group, start, end, annotation) tuples on stdin. Writes (bin, count) on
-stdout.
+Expects (group, start, end, annotation) tuples on stdin. Writes (bin,
+annotation, count) on stdout.
 
 """
 import collections
