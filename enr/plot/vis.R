@@ -10,13 +10,13 @@ scale_state_aggregate <-
                      values=c('promoter' = '#ff0000', 'enhancer' = '#faca00',
                        'insulator' = '#09befe', 'transcribed' = '#00b050',
                        'repressed' = '#7f7f7f', 'other' = 'black',
-                       'coding' = '#005c1f', 'protein_coding' = '#0060a0',
-                       'known_lincRNA' = '#a000a0', 'putative_lincRNA' = '#ff00ff'))
+                       'coding' = '#005c1f', 'exon' = '#0060a0',
+                       'known_lincRNA' = '#a000a0'))
 
 args <- commandArgs(TRUE)
 rects <- read.csv(args[1], header=0)
 rects$V5 <- rects$V1 + 1
-CairoPNG(width=2048, height=8192)
+CairoPNG(file='vis.png', width=2048, height=8192)
 print(qplot(data=rects, geom='rect', xmin=V2, xmax=V3, ymin=V1, ymax=V5,
             fill=factor(V4)) +
       geom_vline(xintercept=0, color='black') +
