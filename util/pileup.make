@@ -42,19 +42,23 @@ elements: chrom exons known_lincRNAs
 exons: regions.bed
 	zcat $(HOME)/hp/gencode/gencode.v10.annotation.gtf.gz | \
     awk '$$3 == "exon" && /protein_coding/ && /KNOWN/'  | \
-    bedtools intersect -a regions.bed -b stdin -wb | \
+    bedtools intersect -a $< -b stdin -wb | \
     awk -vOFS='\t' '{print $$1, $$2, $$3, "exon", $$4}' >$@
 
 known_lincRNAs: regions.bed
 	zcat $(HOME)/hp/gencode/gencode.v10.annotation.gtf.gz | \
     awk -vOFS='\t' '$$3 == "exon" && /lincRNA/ && /KNOWN/' | \
-    bedtools intersect -a regions.bed -b stdin -wb | \
+    bedtools intersect -a $< -b stdin -wb | \
     awk -vOFS='\t' '{print $$1, $$2, $$3, "known_lincRNA", $$4}' >$@
 
 pileup: chrom exons known_lincRNAs
 	cat chrom exons known_lincRNAs | \
     python $(HOME)/code/ld/torel.py | \
-    python $(HOME)/code/util/pileup.py $(BINSIZE) >pileup
+    python $(HOME)/code/util/pileup.py $(PFLAGS) >$@
+
+regions.bed: $(MARKERS)
+	zcat $(MARKERS) | \
+    python3 $(HOME)/code/ld/regions.py $(RFLAGS) >$@
 
 expected:
 	false
