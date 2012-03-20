@@ -11,6 +11,7 @@ import sys
 
 for k, xss in it.groupby(csv.reader(sys.stdin, delimiter='\t'), key=op.itemgetter(3)):
     yss = list(xss)
+    rep = yss[0][2]
     for ys in yss:
-        ys[3] = yss[0][1]
+        ys[3] = rep
         print(*ys, sep='\t')
