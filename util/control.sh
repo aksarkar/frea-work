@@ -13,7 +13,7 @@ do
     zcat $HOME/hp/t1d/data/hg19/t1d.bed.gz | \
         python3 $HOME/code/util/sample.py 30000 | \
         gzip >markers.bed.gz
-    make -s pileup MARKERS=markers.bed.gz RFLAGS="-s 200000"
+    make -sj pileup MARKERS=markers.bed.gz RFLAGS="-s 200000"
     python $HOME/code/util/acc.py acc pileup >temp
     mv temp acc
     rm regions.bed
