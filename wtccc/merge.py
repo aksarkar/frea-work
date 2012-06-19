@@ -9,16 +9,23 @@ def merge(*iterables, key=identity):
     sentinel = object()
     iters = [iter(x) for x in iterables]
     while iters:
+        restart = False
         curr = next(iters[0], sentinel)
         if curr is sentinel:
-            return
+            raise StopIteration
         for it in iters[1:]:
+            if restart:
+                break
             elem = next(it, sentinel)
             while elem is not sentinel and key(elem) < key(curr):
                 elem = next(it, sentinel)
             if elem is not sentinel and key(elem) == key(curr):
                 curr.extend(elem[1:])
-        yield curr
+            else:
+                print(file=sys.stderr)
+                restart = True
+        if not restart:
+            yield curr
         
 if __name__ == '__main__':
     files = [open(x) for x in sys.argv[1:]]
