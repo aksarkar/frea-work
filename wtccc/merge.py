@@ -1,3 +1,9 @@
+"""Merge genotype matrices for WTCCC data
+
+Usage: python3 merge.py FILE1 [...]
+
+Author: Abhishek Sarkar
+"""
 import csv
 import operator
 import sys
