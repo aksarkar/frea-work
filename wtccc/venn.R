@@ -1,0 +1,15 @@
+library(Cairo)
+library(plyr)
+library(Vennerable)
+
+args <- commandArgs(TRUE)
+d <- read.csv(args[1], header=0)
+colnames(d) <- c('iter', 'subject', 'prob', 'set')
+sets <- dlply(d, .(set), function(x) subset(x$subject, x$prob > .5))
+sets[['Combined']] = sets[['Curated+enhancers']]
+v <- Venn(Sets=sets[c('Curated', 'Enhancers', 'Combined')])
+diagram <- compute.Venn(v, doWeights=0, type='circles')
+gps <- VennThemes(diagram, colourAlgorithm='signature')
+CairoPDF('temp.pdf')
+plot(diagram, gpList=gps)
+dev.off()
