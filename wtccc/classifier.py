@@ -4,7 +4,7 @@ Performs L1-penalized logistic regression with 20-fold stratified
 cross-validation. Outputs model coefficients, probabilities of positive class,
 individual ROC curves, and threshold averaged ROC curve.
 
-Usage: python2 classifier.py GENOTYPES
+Usage: python2 classifier.py GENOTYPES TRAIN TEST
 
 Author: Abhishek Sarkar <aksarkar@mit.edu>
 
@@ -12,8 +12,10 @@ Author: Abhishek Sarkar <aksarkar@mit.edu>
 from __future__ import print_function
 from __future__ import division
 
+import csv
 import functools
 import itertools
+import operator
 import sys
 
 import numpy
@@ -91,6 +93,10 @@ def run(model, X, y, train, test):
     ps = model.predict_proba(X[test])[:,1]
     return model.coef_, ps
 
+def load_set(f):
+    return [[int(x[1]) for x in xs] for k, xs in
+            itertools.groupby(csv.reader(f), key=operator.itemgetter(0))]
+
 if __name__ == '__main__':
     A = numpy.array
     with open(sys.argv[1]) as f:
@@ -98,17 +104,21 @@ if __name__ == '__main__':
     y = A([1 for _ in xrange(2000)] + [0 for _ in xrange(3004)])
     model = lm.LogisticRegression(penalty='l1')
     run_ = functools.partial(run, model, X, y)
-    cv_ = cv.StratifiedKFold(y, 20)
-    css, pss = zip(*[run_(train, test) for train, test in cv_])
+    with open(sys.argv[2]) as f:
+        train_sets = load_set(f)
+    with open(sys.argv[3]) as f:
+        test_sets = load_set(f)
+    css, pss = zip(*[run_(train, test) for train, test in
+                     zip(train_sets, test_sets)])
     with open('models.csv', 'w') as f:
         for i, cs in enumerate(css):
             for c in cs.flatten():
                 print(i, c, sep=',', file=f)
     with open('predictions.csv', 'w') as f:
-        for i, (ps, (_, test)) in enumerate(zip(pss, cv_)):
+        for i, (ps, test) in enumerate(zip(pss, test_sets)):
             for p, t in zip(ps, test):
                 print(i, t, p, y[t], sep=',', file=f)
-    rocs = [sorted(roc(ps, y[test])) for ps, (_, test) in zip(pss, cv_)]
+    rocs = [sorted(roc(ps, y[test])) for ps, test in zip(pss, test_sets)]
     with open('rocs.csv', 'w') as f:
         for i, roc in enumerate(rocs):
             for fpr, tpr, score in roc:
