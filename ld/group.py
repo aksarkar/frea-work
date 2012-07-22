@@ -29,4 +29,4 @@ fn = {'state': state, 'union': union}[sys.argv[1]]
 for k, g in it.groupby(csv.reader(sys.stdin, delimiter='\t'),
                        key=op.itemgetter(3)):
     xs = list(g)
-    print('\t'.join(xs[0][:4]), fn(xs), sep='\t')
+    print('\t'.join(xs[0][:-1]), fn(xs), sep='\t')
