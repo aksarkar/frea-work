@@ -1,6 +1,6 @@
 """Index 1KD LD files for quick lookups
 
-Usage: python index_1kg.py INPUTFILE
+Usage: python index.py LDFILE
 
 Author: Abhishek Sarkar <aksarkar@mit.edu>
 
