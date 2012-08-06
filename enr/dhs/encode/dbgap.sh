@@ -1,6 +1,6 @@
 #!/bin/bash
 #BSUB -J dbgap-dnase[1-4215]
-#BSUB -R rusage[argon_io=3]
+#BSUB -R rusage[argon_io=1]
 #BSUB -o dbgap-dnase.log
 #BSUB -q compbio-week
 set -e
@@ -10,7 +10,7 @@ markers=$(find $dbgap/analyses -type f | \
     sed -n "$LSB_JOBINDEX p")
 expanded=$dbgap/expanded/hapmap/$(printf "%04d" $LSB_JOBINDEX).bed.gz
 annotations=/broad/compbio/aksarkar/annotations
-for i in $(find $annotations/dnase/ -type f)
+for i in $(find $annotations/dhs/encode -type f)
 do
     echo -n ">>> $markers $(echo $i | sed -r 's#.*/(.*).bed.gz#\1#') "
     bedtools intersect -a $expanded -b $i -c | \
