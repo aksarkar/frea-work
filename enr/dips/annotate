@@ -1,4 +1,0 @@
-#!/bin/bash
-find /seq/compbio-hp/aksarkar/dips -name "dips*" | \
-    parallel ln -s {} $ENR_WORK
-python $(cd -P $(dirname $0) && pwd)/dbgap_to_bed.py $1
