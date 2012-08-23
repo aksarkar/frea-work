@@ -10,6 +10,6 @@ if len(set(c for p, c in data)) == 1:
     print(0)
     print('Warning: all markers in one class', file=sys.stderr)
 else:
-    d, prob = scipy.stats.ks_2samp([p for p, c in data if c == 1],
-                                   [p for p, c in data if c == 0])
-    print('{:6e} {:6e}'.format(d, prob))
+    u, prob = scipy.stats.mannwhitneyu([p for p, c in data if c == 1],
+                                       [p for p, c in data if c == 0])
+    print('{:6e} {:6e}'.format(u, prob))
