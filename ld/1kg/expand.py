@@ -2,8 +2,8 @@
 
 Usage: python expand.py INDEXFILE LDFILE THRESH
 
-Expects 0-based BED file with hg19 coordinates on stdin. Writes (id, p) pairs
-on stdout, where id is a HaploReg identifier (dbSNP 135 rsid or hg19chr:pos).
+Expects (id, p) pairs on stdin. Writes (id, p) pairs on stdout. id must be a
+HaploReg identifier (dbSNP 135 rsid or hg19chr:pos).
 
 We impute p-values by picking the lowest GWAS p-value in LD with a given SNP
 which meets the threshold on R².
@@ -24,28 +24,30 @@ def parse(types, row):
     """Parse a sequence according to the sequence of types"""
     return [g(x) for g, x in zip(types, row)]
 
-def lookup(id_, ldfile, thresh):
+def lookup(id_, ldfile, index, thresh):
     """Look up SNPs in LD with the given identifier"""
-    result = [(id_, id_)]
+    result = [(id_, id_, 1)]
     if id_ not in index:
         return result
     ldfile.seek(index[id_])
     t = ldfile.readline().split()[1]
     u = (parse([str, float, float], inld.split(',')) for inld in t.split(';'))
     v = (x for x in u if len(x) == 3)
-    result.extend((id_, inld) for inld, dprime, corr in v if corr > thresh)
+    result.extend((id_, inld, corr) for inld, dprime, corr in v if corr > thresh)
     return result
 
-thresh = float(sys.argv[3])
+def load_index(indexfile):
+    return dict(parse([str, int], line.split()) for line in indexfile)
 
-markers = dict(parse([str, float], line.split()) for line in sys.stdin)
-
-with open(sys.argv[1]) as f:
-    index = dict(parse([str, int], line.split()) for line in f)
-
-with open(sys.argv[2]) as f:
-    chain = itertools.chain.from_iterable
-    key = operator.itemgetter(1)
-    ld = sorted(chain(lookup(id_, f, thresh) for id_ in markers), key=key)
-    for k, g in itertools.groupby(ld, key=key):
-        print(k, min((markers[i], i) for i, _ in g)[0])
+if __name__ == '__main__':
+    thresh = float(sys.argv[3])
+    markers = dict(parse([str, float], line.split()) for line in sys.stdin)
+    with open(sys.argv[1]) as f:
+        index = load_index(f)
+    with open(sys.argv[2]) as f:
+        C = itertools.chain.from_iterable
+        key = operator.itemgetter(1)
+        ld = sorted(C(lookup(id_, f, index, thresh) for id_ in markers),
+                    key=key)
+        for k, g in itertools.groupby(ld, key=key):
+            print(k, *min((markers[i], i, corr) for i, _, corr in g))
