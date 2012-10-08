@@ -1,3 +1,11 @@
+"""Bin binary annotations for RR plots
+
+Usage: python bin.py PHENOTYPE FEATURE CELLTYPE BINSIZE
+
+Author: Abhishek Sarkar <aksarkar@mit.edu>
+
+"""
+
 import csv
 import sys
 
