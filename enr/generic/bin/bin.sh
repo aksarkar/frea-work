@@ -24,7 +24,7 @@ then
     bedtools intersect -a $1 -b $features -c | \
         sort -k5g | \
         cut -f6 | \
-        python $HOME/code/enr/generic/bin/bin.py $phenotype $c $f $3
+        python $HOME/code/enr/generic/bin/bin.py $phenotype $f $c $3
 else
     zcat $markers | \
         awk -vt=$4 '$6 > t' | \
