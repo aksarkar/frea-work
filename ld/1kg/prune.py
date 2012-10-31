@@ -17,7 +17,7 @@ with open(sys.argv[2]) as f:
     while ranked:
         curr, p = ranked.pop(0)
         if curr in markers:
-            inld = [i for _, i in expand.lookup(curr, f, index, thresh)
+            inld = [i for _, i, _ in expand.lookup(curr, f, index, thresh)
                     if i in markers]
             q, rep = min((markers[i], i) for i in inld)
             for i in inld:
