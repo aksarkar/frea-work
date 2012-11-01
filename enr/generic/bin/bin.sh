@@ -26,7 +26,7 @@ then
         cut -f6 | \
         python $HOME/code/enr/generic/bin/bin.py $phenotype $f $c $3
 else
-    zcat $markers | \
+    zcat $1 | \
         awk -vt=$4 '$6 > t' | \
         bedtools intersect -a stdin -b $features -c | \
         python $HOME/code/ld/group.py union | \
