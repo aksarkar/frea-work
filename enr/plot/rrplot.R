@@ -30,7 +30,8 @@ rrplot <- function(X) {
                             breaks=c(0, 50000, 100000, 150000)) +
          geom_hline(yintercept=0, color='black') +
          theme_bw() +
-         opts(strip.background=theme_rect(fill=NA, colour=NA)))
+         opts(strip.background=theme_rect(fill=NA, colour=NA),
+              legend.position="none"))
 }
 
 args <- commandArgs(TRUE)
