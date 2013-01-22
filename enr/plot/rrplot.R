@@ -40,7 +40,9 @@ rm(D)
 colnames(E) <- c('phenotype', 'feature', 'celltype', 'total', 'dev')
 p <- (rrplot(subset(E, total < 150000)) +
       facet_grid(phenotype ~ feature, scale='free'))
-Cairo(type='pdf', file='out.pdf', dpi=96, width=28, height=28, units='in')
+write.csv(E, file='rrplot.csv', quote=FALSE, row.names=FALSE)
+Cairo(type='pdf', file='out.pdf', dpi=96, width=4 * length(table(E$feature)),
+      height=4 * length(table(E$phenotype)), units='in')
 print(p)
 warnings()
 dev.off()
