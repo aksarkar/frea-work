@@ -1,17 +1,15 @@
 #!/bin/bash
-#BSUB -J wtccc1-ranksum[1-1960]
-#BSUB -R rusage[argon_io=1]
-#BSUB -o wtccc1-generic.log
-#BSUB -q compbio-week
+# Test enrichment of markers for functional elements
+# Usage: ranksum.sh MARKERS FEATURES
+# Author: Abhishek Sarkar
 set -e
-args=$(sed -n "$LSB_JOBINDEX p" $JOBLIST)
-markers=$(echo $args | awk '{print $1}')
-features=$(echo $args | awk '{print $2}')
-echo -n ">>> $(basename $markers) $features " | \
-    sed -r -e "s#[/a-z]*features/##" -e "s/.bed(.gz)?//"
+phenotype=$(basename $1 | sed "s/.bed.gz//")
+a=$(echo $2 | sed -e "s#.*features/##" -e "s/.bed.gz//")
+feature=$(echo $a | cut -d/ -f1)
+celltype=$(echo $a | cut -d/ -f2-)
+echo "$phenotype,$feature,$celltype,"
 t=$(mktemp -p /broad/hptmp/aksarkar)
-bedtools intersect -a $markers -b /broad/compbio/aksarkar/wtccc1/exclude.bed.gz -v | \
-    bedtools intersect -a stdin -b $features -c | \
+bedtools intersect -a $1 -b $2 -c | \
     bedtools sort -i stdin | \
     cut -f5,6 >$t
 wc -l <$t | cat - $t | $HOME/code/test/exact/ranksum
