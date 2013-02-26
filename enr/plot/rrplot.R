@@ -1,7 +1,22 @@
 # RR plots for enrichment down the rank list
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
+library(directlabels)
 library(ggplot2)
+library(plyr)
 library(Cairo)
+
+filter <- function(d, ...) {
+  return(head(d[order(d$y, decreasing=TRUE),], n=10))
+}
+
+my.bumpup <- function (d, ...) {
+  if (nrow(d) > 1) {
+    return bumpup(d)
+  }
+  else {
+    return(d)
+  }
+}
 
 scale_cell_type <-
   scale_color_manual(name='Cell type',
@@ -23,15 +38,18 @@ dev <- function(X, binsize=1000) {
 }
 
 rrplot <- function(X) {
-  return(qplot(data=X, x=total, y=dev, geom='line', size=I(.25),
-               color=celltype, xlab='SNPs ranked by p-value',
-               ylab='Normalized deviation from expected count') +
-         scale_x_continuous(limits=c(0, 150000),
-                            breaks=c(0, 50000, 100000, 150000)) +
+  return(ggplot(X, aes(x=total, y=dev, color=celltype)) +
+         geom_line(size=I(.25)) +
          geom_hline(yintercept=0, color='black') +
+         geom_dl(aes(label=celltype),
+                 method=list(cex=.35, 'last.points', 'filter', 'my.bumpup')) +
+         scale_x_continuous(name='SNPs ranked by beta',
+                            limits=c(0, 200000),
+                            breaks=c(0, 50000, 100000, 150000)) +
+         scale_y_continuous(name='Cumulative deviation from expected count') +
          theme_bw() +
-         opts(strip.background=theme_rect(fill=NA, colour=NA),
-              legend.position="none"))
+         theme(strip.background=element_blank(),
+               legend.position="none"))
 }
 
 args <- commandArgs(TRUE)
@@ -42,7 +60,7 @@ colnames(E) <- c('phenotype', 'feature', 'celltype', 'total', 'dev')
 p <- (rrplot(subset(E, total < 150000)) +
       facet_grid(phenotype ~ feature, scale='free'))
 write.csv(E, file='rrplot.csv', quote=FALSE, row.names=FALSE)
-Cairo(type='pdf', file='out.pdf', dpi=96, width=4 * length(table(E$feature)),
+Cairo(type='pdf', file='rrplot.pdf', dpi=96, width=4 * length(table(E$feature)),
       height=4 * length(table(E$phenotype)), units='in')
 print(p)
 warnings()
