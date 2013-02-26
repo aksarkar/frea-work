@@ -8,7 +8,7 @@
 
 set -e
 ld=/broad/compbio/aksarkar/ld/1kg
-bedtools intersect -a stdin -b $ld/haploreg.bed -wb | \
+bedtools intersect -a stdin -b $ld/haploreg_b137_chromsweep.bed -sorted -wb | \
     awk '{print $9, $5}' | \
     python $HOME/code/ld/1kg/prune.py $ld/ceu-index.txt $ld/CEU.txt $1 | \
     sort -k1 | \
