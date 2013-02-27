@@ -17,8 +17,18 @@ if (($m > $n))
 then
     exit 1
 fi
-start=$(($n / $m * ($LSB_JOBINDEX - 1) + 1))
-end=$(($LSB_JOBINDEX == $LSB_JOBINDEX_END ? $n + 1 : $start + $n / $m))
+ntasks=$(($n / $m))
+rem=$(($n % $m))
+if (($LSB_JOBINDEX - 1 < $rem))
+then
+    ((ntasks++))
+fi
+start=$(($ntasks * ($LSB_JOBINDEX - 1) + 1))
+if (($LSB_JOBINDEX > $rem))
+then
+    start=$(($start + $rem))
+fi
+end=$(($LSB_JOBINDEX == $LSB_JOBINDEX_END ? $n + 1 : $start + $ntasks))
 for ((i = $start; i < $end; i++))
 do
     eval $(sed -n "$i p" $JOBLIST)
