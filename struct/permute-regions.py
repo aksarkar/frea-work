@@ -23,7 +23,7 @@ data = [load(filename.strip()) for filename in sys.stdin]
 dist = [len(x) for x in data]
 elems = list(itertools.chain.from_iterable(data))
 for i in range(noutputs):
-    with open('{:0{w}d}.bed'.format(w=int(math.log10(noutputs) + 1), i),
+    with open('{:0{w}d}.bed'.format(i, w=int(math.log10(noutputs))),
               'w') as f:
         for j in random.sample(elems, random.choice(dist)):
             print(j, file=f)
