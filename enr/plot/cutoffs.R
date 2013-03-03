@@ -34,7 +34,6 @@ my.log10_trans <- function() {
   trans_new('my.log10', trans, inverse)
 }
 
-
 args <- commandArgs(TRUE)
 d <- read.table(args[1], header=FALSE, sep=' ')
 w <- 4 * length(table(d$V2))
@@ -61,6 +60,6 @@ p <- (ggplot(d, aes(x=offset * V4, y=V6, color=V3)) +
             panel.grid.minor=element_blank(),
             strip.background=element_blank(),
             legend.position='none'))
-pdf(height=4 * length(table(d$V1)), width=w)
+pdf(file=gsub("in", "pdf", args[1]), height=4 * length(table(d$V1)), width=w)
 print(p)
 dev.off()
