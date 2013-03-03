@@ -31,5 +31,5 @@ fi
 end=$(($LSB_JOBINDEX == $LSB_JOBINDEX_END ? $n + 1 : $start + $ntasks))
 for ((i = $start; i < $end; i++))
 do
-    eval $(sed -n "$i p" $JOBLIST)
+    eval "$(sed -n ${i}p $JOBLIST)"
 done
