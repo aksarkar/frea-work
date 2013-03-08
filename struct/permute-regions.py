@@ -2,7 +2,7 @@
 
 Usage: permute-regions.py NOUTPUTS
 
-Expects list of BED files on stdin (all must have the same number of fields).
+Expects list of BED files on stdin
 
 Author: Abhishek Sarkar <aksarkar@mit.edu>
 
