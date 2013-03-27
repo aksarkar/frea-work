@@ -1,36 +1,49 @@
-#!/bin/bash
-# Bin binary annotations for RR plots
-# Usage: bin.sh MARKERS FEATURES BINSIZE [THRESH]
-
-#   MARKERS - 0-based BED file. If THRESH is given, 4th field must be
-#   representative id.
-
-#   FEATURES - 0-based BED file
-
-#   BINSIZE - number of SNPs per bin
-
-#   THRESH - LD threshold to take union over
-
-# Author: Abhishek Sarkar <aksarkar@mit.edu>
 set -e
-markers=$1
-features=$2
-phenotype=$(basename $markers | sed -r 's/.bed(.gz)?//')
-f=$(echo $features | sed 's#.*features/##' | awk -vFS=/ '{print $1}')
-c=$(echo $features | sed 's#.*features/##' | awk -vFS=/ '{print $2}' | \
-    sed -r 's/.bed(.gz)?//')
-if [[ -z $4 ]]
-then
-    bedtools intersect -a $1 -b $features -c | \
-        sort -k5g | \
-        cut -f6 | \
-        python $HOME/code/enr/generic/bin/bin.py $phenotype $f $c $3
-else
-    zcat $1 | \
-        awk -vt=$4 '$6 > t' | \
-        bedtools intersect -a stdin -b $features -c | \
-        python $HOME/code/ld/group.py union | \
-        sort -k5g | \
-        cut -f7 | \
-        python $HOME/code/enr/generic/bin/bin.py $phenotype $f $c $3
-fi
+eval set -- $(getopt -o "i:s:t" -l "intersect:subtract:thresh:" -n $0 -- $@)
+while [[ $1 != "--" ]]
+do
+    case $1 in
+        -i|--intersect)
+            filter=intersect
+            sorted="-sorted"
+            mod="+"
+            shift
+            mask=$1
+            shift
+            ;;
+        -s|--subtract)
+            filter=subtract
+            mod="-"
+            shift
+            mask=$1
+            shift
+            ;;
+        -t|--thresh)
+            shift
+            thresh=$1
+            shift
+            ;;
+    esac
+done
+shift
+markers=${1?"$0: missing markers"}
+features=${2?"$0: missing features"}
+binsize=${3-1000}
+phenotype=$(basename $markers | sed -r "s/.bed.*//")
+f=$(echo $features | sed "s#.*features/##" | cut -d/ -f1)${mask+$mod$(basename $mask | sed "s/.bed.*//")}
+c=$(echo $features | sed "s#.*features/##" | cut -d/ -f2- | \
+    sed -r "s/.bed.*//")
+bedtools sort -i $features | \
+    bedtools intersect -a $1 -b stdin -sorted -c | \
+{
+    if [[ ! -z $filter ]]
+    then
+        bedtools $filter -a stdin -b $mask $sorted
+    else
+        cat
+    fi
+} | \
+    cut -f5,6 | \
+    sort -k1gr | \
+    cut -f2 | \
+    python $HOME/code/enr/generic/bin/bin.py $phenotype $f $c $binsize
