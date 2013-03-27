@@ -15,8 +15,11 @@ enrichment for disjoint intervals of SNP ranks).
 Author: Abhishek Sarkar <aksarkar@mit.edu>
 
 """
+import math
 import itertools
 import sys
+
+import scipy.stats
 
 markers = sys.argv[1]
 feature = sys.argv[2]
@@ -29,24 +32,25 @@ data = [tuple(g(x) for g, x in zip(types, line.split()))
 if not data:
     raise ValueError('No data ({}, {}, {})'.format(markers, feature, celltype))
     
-ns = list(itertools.takewhile(lambda m: m < 2 * len(data),
+ns = list(itertools.takewhile(lambda m: m < len(data),
                               (100 << i for i in itertools.count())))
 if exclude:
-    ns.insert(0, 1)
-cutoffs = [data[n - 1][0] if n - 1 < len(data) else data[-1][0] for n in ns]
+    ns.insert(0, 0)
+    ns.append(2 * ns[-1])
 
-positives = [s for s, a in data if a]
+num_overlaps = len([s for s, a in data if a])
+F = scipy.stats.fisher_exact
 if exclude:
-    obs = [len([s for s in positives if sb <= s <= sa]) / (rb - ra)
-           for sa, sb, ra, rb in zip(cutoffs, cutoffs[1:], ns, ns[1:])]
+    obs = [len([s for s, a in data[ra:min(rb, len(data))] if a])
+           for ra, rb in zip(ns, ns[1:])]
+    ms = [min(rb, len(data)) - ra for ra, rb in zip(ns, ns[1:])]
 else:
-    obs = [len([s for s in positives if c <= s]) / min(n, len(data))
-           for c, n in zip(cutoffs, ns)]
+    obs = [len([s for s, a in data[:n] if a]) for n in ns]
+    ms = ns
+tests = (F([[o, m - o], [num_overlaps - o, len(data) - m - num_overlaps + o]])
+         for o, m in zip(obs, ms))
 
-exp = (1 + len(positives)) / (1 + len(data))
-folds = (o / exp for o in obs)
 if exclude:
     ns.pop(0)
-    cutoffs.pop(0)
-for n, c, f in zip(ns, cutoffs, folds):
-    print(markers, feature, celltype, n, c, f)
+for n, (o, p) in zip(ns, tests):
+    print(markers, feature, celltype, n, -math.log(p, 10), o)
