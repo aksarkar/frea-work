@@ -1,3 +1,12 @@
+#!/bin/bash
+# Bin binary annotations for RR plots
+# Usage: bin.sh MARKERS FEATURES
+# Options:
+#   -i, --intersect  Bin over intersection of regions and genome
+#   -s, --subtract   Bin over genome minus regions
+#   -t, --thresh     LD-expand out to specified R^2 threshold
+
+# Author: Abhishek Sarkar <aksarkar@mit.edu>
 set -e
 eval set -- $(getopt -o "i:s:t" -l "intersect:subtract:thresh:" -n $0 -- $@)
 while [[ $1 != "--" ]]
