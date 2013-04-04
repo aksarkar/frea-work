@@ -1,15 +1,20 @@
 #!/bin/awk -f
 BEGIN {
     OFS="\t"
+    af="common"
 }
 
-NR > 1 && $8 != "NA" {
-    if ($8 < 0) {
+NR > 1 && $10 != "NA" {
+    if ($10 < 0) {
         sign = "negative"
-        $8 = -1 * $8
+        $10 = -1 * $10
     }
     else {
         sign = "positive"
     }
-    print "chr" $1, $2, $3, $4, $9 > sign ".bed"
+    print "chr" $1, $2, $3, $4, $10 > sign".bed"
+}
+
+NR > 1 && $9 != "NA" {
+    print "chr" $1, $2, $3, $4, -log($9) / log(10) > af".bed"
 }
