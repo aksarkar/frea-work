@@ -2,16 +2,21 @@
 # Bin binary annotations for RR plots
 # Usage: bin.sh MARKERS FEATURES
 # Options:
+#   -c, --cumulative Compute cumulative statistic
 #   -i, --intersect  Bin over intersection of regions and genome
 #   -s, --subtract   Bin over genome minus regions
 #   -t, --thresh     LD-expand out to specified R^2 threshold
 
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
 set -e
-eval set -- $(getopt -o "i:s:t" -l "intersect:subtract:thresh:" -n $0 -- $@)
+eval set -- $(getopt -o "i:s:t:cr" -l "intersect:subtract:thresh:cumulative,sort" -n $0 -- $@)
 while [[ $1 != "--" ]]
 do
     case $1 in
+        -c|--cumulative)
+            cumulative=1
+            shift
+            ;;
         -i|--intersect)
             filter=intersect
             sorted="-sorted"
@@ -55,4 +60,4 @@ bedtools sort -i $features | \
     cut -f5,6 | \
     sort -k1gr | \
     cut -f2 | \
-    python $HOME/code/enr/generic/bin/bin.py $phenotype $f $c $binsize
+    python $HOME/code/enr/generic/bin/bin.py $phenotype $f $c $binsize $cumulative
