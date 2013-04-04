@@ -25,6 +25,10 @@ do
             mask=$1
             shift
             ;;
+        -r|--sort)
+            dosort=1
+            shift
+            ;;
         -s|--subtract)
             filter=subtract
             mod="-"
@@ -47,7 +51,14 @@ phenotype=$(basename $markers | sed -r "s/.bed.*//")
 f=$(echo $features | sed "s#.*features/##" | cut -d/ -f1)${mask+$mod$(basename $mask | sed "s/.bed.*//")}
 c=$(echo $features | sed "s#.*features/##" | cut -d/ -f2- | \
     sed -r "s/.bed.*//")
-bedtools sort -i $features | \
+{
+    if [[ ! -z $dosort ]]
+    then
+        bedtools sort -i $features
+    else
+        zcat $features
+    fi
+} | \
     bedtools intersect -a $1 -b stdin -sorted -c | \
 {
     if [[ ! -z $filter ]]
