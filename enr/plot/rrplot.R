@@ -44,11 +44,12 @@ rrplot <- function(X, name, zero, cutoff=30000) {
   return(ggplot(X[X$total <= cutoff, ],
                 aes(x=total, y=y, color=celltype)) +
          geom_line(size=I(.25)) +
-         geom_hline(yintercept=zero, color='black', size=I(.25)) +
+         geom_hline(yintercept=zero, color="black", size=I(.25)) +
          geom_dl(aes(label=celltype),
-                 method=list(cex=.8, 'last.points', filter(10), 'my.bumpup')) +
-         facet_grid(phenotype ~ feature, scale='free') +
-         scale_x_continuous(name='Rank', limits=c(0, 1.6 * cutoff)) +
+                 method=list(cex=.8, "first.points", filter(10), "my.bumpup")) +
+         facet_grid(phenotype ~ feature, scale="free") +
+         scale_x_continuous(name="Rank", limits=c(-.6 * cutoff, cutoff),
+                            breaks=seq(0, cutoff, cutoff / 4)) +
          scale_y_continuous(name=name) +
          theme_bw() +
          theme(strip.background=element_blank(),
@@ -57,15 +58,18 @@ rrplot <- function(X, name, zero, cutoff=30000) {
 
 args <- commandArgs(TRUE)
 D <- read.csv(args[1], header=FALSE)
-colnames(D) <- c('total', 'phenotype', 'celltype', 'feature', 'count', 'expected')
-E <- read.csv(args[2], header=FALSE)
-colnames(E) <- c(colnames(D), 'rep')
-h <- 15
-w <- 1.6 * h
-Cairo(file=gsub(".in", ".pdf", args[1]), type='pdf', width=w, height=h, units='cm', dpi='auto')
-## rrplot(dev(D), 'Normalized deviation', 0)
-rrplot(fold(D), 'Fold enrichment', 1)
-## rrplot(z.score(D, E, dev), 'Z-score (normalized deviation)', 0)
-rrplot(z.score(D, E, fold), 'Z-score (fold enrichment)', 0)
+colnames(D) <- c("total", "phenotype", "celltype", "feature", "count", "expected")
+if (length(args) > 1) {
+  E <- read.csv(args[2], header=FALSE)
+  colnames(E) <- c(colnames(D), "rep")
+}
+panelsize <- 15
+h <- panelsize * length(table(D$phenotype))
+w <- 1.6 * panelsize * length(table(D$feature))
+Cairo(file=gsub(".in", ".pdf", args[1]), type="pdf", width=w, height=h, units="cm", dpi="auto")
+rrplot(fold(D), "Fold enrichment", 1, 20000)
+if (exists("E")) {
+  rrplot(z.score(D, E, fold), "Z-score (fold enrichment)", 0, 150000)
+}
 warnings()
 dev.off()
