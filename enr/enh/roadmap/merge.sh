@@ -1,6 +1,6 @@
 #!/bin/bash
 #BSUB -J merge-erm
-#BSUB -R rusage[mem=6,argon_io=3]
+#BSUB -R rusage[mem=1,argon_io=3]
 #BSUB -o merge-erm-enh.log
 #BSUB -q compbio-week
 set -e
@@ -18,9 +18,9 @@ do
             bedtools merge -i $g >$out
         else
             bedtools merge -i $g | \
-                bedtools intersect -a $out -b stdin >$t
+                bedtools intersect -a $out -b stdin -sorted >$t
             mv $t $out
         fi
     done
-    gzip $out
+    # gzip $out
 done
