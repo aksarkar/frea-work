@@ -7,11 +7,15 @@
 
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
 set -e
+export LC_ALL=C
 ld=/broad/compbio/aksarkar/ld/1kg
-bedtools intersect -a stdin -b $ld/haploreg_b137_chromsweep.bed -wb -sorted | \
-    awk '{print $9, $5}' | \
-    python $HOME/code/ld/1kg/expand.py $ld/ceu-index.txt $ld/CEU.txt $1 | \
-    sort -k1 | \
-    join - /broad/compbio/aksarkar/ld/1kg/haploreg.bed -24 | \
-    sort -k3 | \
-    awk -vOFS='\t' '{print $5, $6, $7, $3, $2, $4}'
+bedtools intersect -a $ld/haploreg_b137_chromsweep.bed.gz -b stdin -sorted | \
+    cut -f4 | \
+    sort | \
+    join - $ld/normalized.txt | \
+    awk -v thresh=$1 '$3 > thresh {print $2}' | \
+    sort | \
+    uniq | \
+    join - $ld/haploreg.bed -24 -o '2.1 2.2 2.3 2.4' | \
+    tr ' ' '\t' | \
+    bedtools sort
