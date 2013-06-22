@@ -28,6 +28,27 @@ my.bumpup <- function(d, ...) {
   }
 }
 
+bumpdown <- function(d,...) {
+  if (nrow(d) > 1) {
+    d <- calc.boxes(d)[order(d$y, decreasing=TRUE),]
+    "%between%" <- function(v,lims)lims[1]<v&v<lims[2]
+    obox <- function(x,y){
+      tocheck <- with(x,c(left,(right-left)/2+left,right))
+      tocheck %between% with(y,c(left,right))
+    }
+    for(i in 2:nrow(d)){
+      dif <- d$top[i]-d$bottom[i-1]
+      overlap <- c(obox(d[i,],d[i-1,]),obox(d[i-1,],d[i,]))
+      if(dif > 0 && any(overlap)){
+        d$bottom[i] <- d$bottom[i] - dif
+        d$top[i] <- d$top[i] - dif
+        d$y[i] <- d$y[i] - dif
+      }
+    }
+  }
+  d
+}
+
 dev <- function(X) {
   ddply(X, .(phenotype, feature, celltype), transform,
         y=(count - expected) / max(count))
