@@ -15,6 +15,9 @@ BEGIN {
     else if ($3 ~ /clusters/) {
         out = "clusters.in"
     }
+    else if ($4 == "gm12878") {
+        out = "gm12878.in"
+    }
     else {
         out = "celltypes.in"
     }
