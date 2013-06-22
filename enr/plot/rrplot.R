@@ -65,18 +65,26 @@ z.score <- function(X, Y, f) {
             y=(y - m) / s)
 }
 
-rrplot <- function(X, name, zero, cutoff=30000) {
+rrplot <- function(X, name, zero, cutoff=30000, last=TRUE) {
   stopifnot(is.data.frame(X))
   stopifnot(is.numeric(zero))
   stopifnot(cutoff > 0)
+  if (last) {
+    pos <- "last.points"
+    lim <- c(0, 1.6) * cutoff
+  }
+  else {
+    pos <- "first.points"
+    lim <- c(-.6, 1) * cutoff
+  }
   return(ggplot(X[X$total <= cutoff, ],
                 aes(x=total, y=y, color=celltype)) +
          geom_line(size=I(.25)) +
          geom_hline(yintercept=zero, color="black", size=I(.25)) +
          geom_dl(aes(label=celltype),
-                 method=list(cex=.8, "first.points", filter(10), "my.bumpup")) +
+                 method=list(cex=.8, pos, filter(10), "bumpdown")) +
          facet_grid(phenotype ~ feature, scale="free") +
-         scale_x_continuous(name="Rank", limits=c(-.6 * cutoff, cutoff),
+         scale_x_continuous(name="SNPs ranked by increasing p-value", limits=lim,
                             breaks=seq(0, cutoff, cutoff / 4)) +
          scale_y_continuous(name=name) +
          theme_bw() +
