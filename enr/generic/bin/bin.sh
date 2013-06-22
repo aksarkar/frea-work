@@ -4,12 +4,12 @@
 # Options:
 #   -c, --cumulative Compute cumulative statistic
 #   -i, --intersect  Bin over intersection of regions and genome
+#   -r, --sort       Sort features before intersecting
 #   -s, --subtract   Bin over genome minus regions
-#   -t, --thresh     LD-expand out to specified R^2 threshold
 
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
 set -e
-eval set -- $(getopt -o "i:s:t:cr" -l "intersect:subtract:thresh:cumulative,sort" -n $0 -- $@)
+eval set -- $(getopt -o "ci:s:t:r" -l "cumulative,intersect:subtract:sort" -n $0 -- $@)
 while [[ $1 != "--" ]]
 do
     case $1 in
@@ -38,7 +38,7 @@ do
             ;;
         -t|--thresh)
             shift
-            thresh=$1
+            union="1"
             shift
             ;;
     esac
@@ -68,7 +68,7 @@ c=$(echo $features | sed "s#.*features/##" | cut -d/ -f2- | \
         cat
     fi
 } | \
-    cut -f5,6 | \
+    awk -f $HOME/code/ld/union.awk | \
     sort -k1gr | \
     cut -f2 | \
     python $HOME/code/enr/generic/bin/bin.py $phenotype $f $c $binsize $cumulative
