@@ -6,6 +6,13 @@ library(grid)
 library(plyr)
 library(Cairo)
 
+scale_state_aggregate <-
+  scale_color_manual(name='State (aggregate)',
+                     values=c('promoter' = '#ff0000', 'enhancer' = '#faca00',
+                       'insulator' = '#09befe', 'transcribed' = '#00b050',
+                       'repressed' = '#7f7f7f', 'other' = 'black',
+                       'poly-A+-RNA-seq' = '#005c1f', 'diff-expressed' = '#0060a0'))
+
 filter <- function(n) {
   function(d, ...) {
     head(d[order(d$y, decreasing=TRUE),], n=n)
