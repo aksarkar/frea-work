@@ -1,5 +1,5 @@
 #!/bin/bash
-# Usage: genotypes.sh GEN LOOKUP LEGEND
+# Usage: genotypes.sh GEN LOOKUP
 set -e
 export LC_ALL=C
 zcat $1 | \
@@ -7,5 +7,4 @@ zcat $1 | \
     join $2 - | \
     cut -d' ' -f1-3,6- | \
     sort -k3g | \
-    python $HOME/code/wtccc/impute/orient.py $3 | \
     gzip
