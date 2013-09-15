@@ -1,5 +1,4 @@
 import csv
-import gzip
 import sys
 
 if __name__ == '__main__':
