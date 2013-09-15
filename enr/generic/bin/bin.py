@@ -15,7 +15,7 @@ celltype = sys.argv[3]
 binsize = int(sys.argv[4])
 cumulative = len(sys.argv) > 5
 data = [int(x) for x in sys.stdin]
-raw_exp = itertools.repeat(binsize / len(data) * data.count(1))
+raw_exp = itertools.repeat(binsize / (1 + len(data)) * data.count(1))
 bins = (data[i:i+binsize] for i in range(0, len(data), binsize))
 raw_counts = (b.count(1) for b in bins)
 if cumulative:
