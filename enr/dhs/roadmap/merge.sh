@@ -1,26 +1,17 @@
 #!/bin/bash
-#BSUB -J merge-erm
-#BSUB -R rusage[mem=6,argon_io=3]
-#BSUB -o merge-erm-dhs.log
-#BSUB -q compbio-week
 set -e
 t=$(mktemp -p /broad/hptmp/aksarkar)
-for d in $(find /broad/compbio/eaton/erm_data/Complete-Epigenomes -name "Chromatin_Accessibility" | \
-    sed -r 's#/(Donor|Chromatin).*##' | \
-    sort | \
-    uniq)
+while [[ ! -z $1 ]]
 do
-    out=$(echo $d | sed -r 's#.*/##').bed
-    for f in $(find $d -wholename "*/Chromatin_Accessibility/*.bed.gz")
-    do
-        if [[ ! -f $out ]]
-        then
-            bedtools merge -i $f >$out
-        else
-            bedtools merge -i $f | \
-                bedtools intersect -a $out -b stdin >$t
-            mv $t $out
-        fi
-    done
-    gzip $out
+    out=$(basename $1 | sed -e "s/UW.//" -e "s/.Chromatin.*//").bed
+    if [[ -f $out ]]
+    then
+        bedtools merge -i $1 | bedtools intersect -a $out -b stdin -sorted >$t
+        mv $t $out
+    else
+        bedtools merge -i $1 | bedtools sort >$out
+    fi
+    shift
 done
+gzip $out
+rm -f $t
