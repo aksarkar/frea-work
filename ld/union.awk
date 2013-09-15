@@ -1,5 +1,5 @@
 BEGIN {
-    OFS="\t"
+    OFS = "\t"
 }
 
 $4 != name {
