@@ -13,7 +13,7 @@ bedtools intersect -a $ld/haploreg_b137_chromsweep.bed.gz -b stdin -sorted | \
     cut -f4 | \
     sort | \
     join - $ld/normalized.txt | \
-    awk -v thresh=$1 '$3 > thresh {print $2}' | \
+    awk -v thresh=${1?"missing threshold"} '$3 > thresh {print $2}' | \
     sort | \
     uniq | \
     join - $ld/haploreg.bed -24 -o '2.1 2.2 2.3 2.4' | \
