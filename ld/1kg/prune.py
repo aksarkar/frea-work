@@ -1,27 +1,42 @@
-import csv
-import functools
-import operator
+"""Prune SNPs according to LD
+
+Usage: python prune.py
+
+Expects pairs of IDs on stdin. Prints list of tag SNP IDs on stdout.
+
+Iteratively pick the SNP which tags the most other SNPs to add to our list,
+then remove it and its LD partners until no pairs of SNPs in LD remains.
+
+Author: Abhishek Sarkar <aksarkar@mit.edu>
+
+"""
+import collections
 import sys
 
-import expand
-
-thresh = float(sys.argv[3])
-raw = (expand.parse([str, float], line.split()) for line in sys.stdin)
-ranked = sorted(raw, key=operator.itemgetter(1), reverse=True)
-markers = dict(ranked)
-
+thresh = float(sys.argv[3]) if len(sys.argv) > 3 else 0
 with open(sys.argv[1]) as f:
-    index = expand.load_index(f)
-
+    snps = set(line.strip() for line in f)
+    print('loaded {} SNPs'.format(len(snps)), file=sys.stderr)
 with open(sys.argv[2]) as f:
-    while ranked:
-        curr, p = ranked.pop(0)
-        if curr in markers:
-            inld = [i for _, i, _ in expand.lookup(curr, f, index, thresh)
-                    if i in markers]
-            q, rep = min((markers[i], i) for i in inld)
-            for i in inld:
-                if markers[i] < q:
-                    markers.pop(i)
-            if curr == rep:
-                print(curr, p, sep='\t')
+    ref_ld = (line.split() for line in f)
+    ld = collections.defaultdict(set)
+    for k, v, r, d in ref_ld:
+        if float(r) > thresh and k in snps and v in snps:
+            ld[k].add(v)
+            ld[k].add(k)
+            ld[v].add(k)
+            ld[v].add(v)
+    print('found {} pairs in LD'.format(len(ld)), file=sys.stderr)
+
+num_tagged = lambda x: len(ld[x])
+n = 0
+while ld:
+    tag = sorted(ld.keys(), key=num_tagged, reverse=True)[0]
+    print(tag)
+    n += 1
+    assert n < len(snps)
+    prune = ld[tag]
+    for snp in prune:
+        ld.pop(snp)
+    for snp in ld:
+        ld[snp] = ld[snp].difference(prune)
