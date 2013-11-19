@@ -2,6 +2,7 @@
 #BSUB -g /compbio/short
 #BSUB -o log
 #BSUB -q compbio-week
+#BSUB -sp 100
 
 # Map tasks in parallel to LSF using bounded number of workers 
 
