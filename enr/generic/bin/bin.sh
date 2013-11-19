@@ -48,8 +48,8 @@ markers=${1?"$0: missing markers"}
 features=${2?"$0: missing features"}
 binsize=${3-1000}
 phenotype=$(basename $markers | sed -r "s/.bed.*//")
-f=$(echo $features | sed "s#.*features/##" | cut -d/ -f1)${mask+$mod$(basename $mask | sed "s/.bed.*//")}
-c=$(echo $features | sed "s#.*features/##" | cut -d/ -f2- | \
+f=$(echo $features | sed "s#.*features##" | cut -d/ -f2)${mask+$mod$(basename $mask | sed "s/.bed.*//")}
+c=$(echo $features | sed "s#.*features##" | cut -d/ -f3- | \
     sed -r "s/.bed.*//")
 {
     if [[ ! -z $dosort ]]
@@ -68,6 +68,7 @@ c=$(echo $features | sed "s#.*features/##" | cut -d/ -f2- | \
         cat
     fi
 } | \
+    sort -k4 | \
     awk -f $HOME/code/ld/union.awk | \
     sort -k1gr | \
     cut -f2 | \
