@@ -1,3 +1,14 @@
+"""Join dosage files across cohorts
+
+Usage: python join.py MAP DOSAGE
+
+MAP is the corresponding map file (SNPs not required to be in the same
+order). Expects one dosage file on stdin (useful for constructing pipelines to
+join multiple cohorts).
+
+Author: Abhishek Sarkar <aksarkar@mit.edu>
+
+"""
 import csv
 import sys
 
@@ -5,8 +16,8 @@ with open(sys.argv[1]) as f:
     pos = {row[1]: int(row[3]) for row in csv.reader(f, delimiter=' ')}
 
 with open(sys.argv[2]) as f:
-    r1 = csv.reader(sys.stdin, delimiter=' ')
-    r2 = csv.reader(f, delimiter=' ')
+    r1 = (l.split() for l in sys.stdin)
+    r2 = (line.split() for line in f)
     a = next(r1)
     b = next(r2)
     while True:

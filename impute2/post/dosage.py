@@ -1,3 +1,12 @@
+"""Convert GEN to Plink dosage format
+
+Usage: python dosage.py
+
+Expects GEN on stdin, writes dosage on stdou.
+
+Author: Abhishek Sarkar <aksarkar@mit.edu>
+
+"""
 import sys
 
 def kwise(iterable, k):
@@ -12,4 +21,5 @@ def dosages(probs):
 if __name__ == '__main__':
     data = (line.split() for line in sys.stdin)
     for _, rsid, _, a0, a1, *ps in data:
-        print(rsid, a0, a1, ' '.join('{:.3f}'.format(d) for d in dosages(ps)))
+        if len(a0) == 1 and len(a1) == 1:
+            print(rsid, a0, a1, ' '.join('{:.3f}'.format(d) for d in dosages(ps)))
