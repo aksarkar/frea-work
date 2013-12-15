@@ -11,7 +11,7 @@ import sys
 import argparse
 
 p = argparse.ArgumentParser()
-p.add_argument('-v', '--invert-match', help='Invert match', action='store', dest='invert')
+p.add_argument('-v', '--invert-match', help='Invert match', action='store_true', dest='invert')
 p.add_argument('rsids', nargs=1)
 args = p.parse_args()
 

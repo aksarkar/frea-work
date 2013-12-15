@@ -2,7 +2,7 @@
 
 Usage: python dosage.py
 
-Expects GEN on stdin, writes dosage on stdou.
+Expects GEN on stdin, writes dosage on stdout.
 
 Author: Abhishek Sarkar <aksarkar@mit.edu>
 
@@ -16,10 +16,13 @@ def kwise(iterable, k):
 def dosages(probs):
     probs = (float(x) for x in probs)
     probs_by_sample = kwise(probs, 3)
-    return [2 - sum(i * p for i, p in enumerate(ps)) for ps in probs_by_sample]
+    exp_allele_count = [sum(i * p for i, p in enumerate(ps)) for ps in probs_by_sample]
+    if sum(exp_allele_count) / len(exp_allele_count) < .5:
+        return exp_allele_count
+    else:
+        return [2 - e for e in exp_allele_count]
 
 if __name__ == '__main__':
     data = (line.split() for line in sys.stdin)
     for _, rsid, _, a0, a1, *ps in data:
-        if len(a0) == 1 and len(a1) == 1:
-            print(rsid, a0, a1, ' '.join('{:.3f}'.format(d) for d in dosages(ps)))
+        print(rsid, 1, 2, ' '.join('{:.3f}'.format(d) for d in dosages(ps)))
