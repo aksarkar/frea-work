@@ -2,12 +2,11 @@
 
 Author: Abhishek Sarkar
 
-Expects (group, start, end, annotation) tuples on stdin. Writes (bin,
-annotation, count) on stdout.
+Expects space-separated (start, end, annot) tuples on stdin in relative
+coordinates. Writes (bin, group, count) on stdout.
 
 """
 import collections
-import csv
 import itertools as it
 import operator as op
 import sys
@@ -18,11 +17,11 @@ def bins(start, end, binsize, annot):
                                       binsize)]
 
 binsize = int(sys.argv[1])
-types = [int, int, int, str]
-data = ([f(x) for f, x in zip(types, xs)] for xs in csv.reader(sys.stdin))
+types = [int, int, str]
+data = ([f(x) for f, x in zip(types, line.split())] for line in sys.stdin)
 result = collections.Counter()
-for _, xss in it.groupby(data, key=op.itemgetter(0)):
+for _, xss in it.groupby(data, key=op.itemgetter(2)):
     result.update(it.chain.from_iterable(bins(start, end, binsize, annot)
-                                         for (_, start, end, annot) in xss))
+                                         for (start, end, annot) in xss))
 for (bin, annot), count in sorted(result.items()):
     print(bin, annot, count, sep=',')
