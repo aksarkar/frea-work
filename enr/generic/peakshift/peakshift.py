@@ -5,16 +5,18 @@ Usage: python peakshift.py SNPS REGIONS N THRESH
 Shifts regions by random offset in [-THRESH, THRESH] and counts the empirical
 frequency over N trials of observing as many overlaps as in the original data.
 
-Expects SNPS and REGIONS to be gzipped, sorted zero-based BED files. Writes
+Expects SNPS and REGIONS to be sorted zero-based BED files. Writes
 empirical count of trials with as many overlaps, actual count of overlaps, and
 mean and variance of overlaps over the shifted data sets on stdout.
 
 Author: Abhishek Sarkar <aksarkar@mit.edu>
 
 """
+import bz2
 import gzip
 import itertools
 import operator
+import os
 import random
 import sys
 
@@ -29,17 +31,45 @@ def isect(snps, regions):
         if end > snp:
             yield snp
 
-with gzip.open(sys.argv[1]) as f:
+def handle(filename, loader):
+    def helper(fn):
+        with fn(filename, 'rt') as f:
+            return loader(f)
+    if filename == '-':
+        return loader(sys.stdin)
+    _, ext = os.path.splitext(filename)
+    if ext == '.bz2':
+        return helper(bz2.open)
+    elif ext == '.gz':
+        return helper(gzip.open)
+    else:
+        return helper(open)
+
+def load_snps(f):
     snps_raw = (line.split() for line in f)
-    snps = {k: sorted(int(x[1]) for x in g) for k, g in
+    return {k: [int(x[1]) for x in g] for k, g in
             itertools.groupby(snps_raw, key=operator.itemgetter(0))}
-with gzip.open(sys.argv[2]) as f:
+
+def load_regions(f):
     regions_raw = (line.split() for line in f)
-    regions = {k: sorted((int(x[1]), int(x[2])) for x in g) for k, g in
-               itertools.groupby(regions_raw, key=operator.itemgetter(0)) if k in snps}
+    return {k: [(int(x[1]), int(x[2])) for x in g] for k, g in
+            itertools.groupby(regions_raw, key=operator.itemgetter(0)) if k in snps}
+
+if sys.argv[1] == sys.argv[2] == '-':
+    print('error: SNPS and REGIONS cannot both be -')
+    sys.exit(1)
+
+snps = handle(sys.argv[1], load_snps)
+regions = handle(sys.argv[2], load_regions)
 
 ntrials = int(sys.argv[3])
+if ntrials <= 0:
+    print('error: N must be positive')
+    sys.exit(1)
 thresh = int(sys.argv[4])
+if thresh <= 0:
+    print('error: thresh must be positive')
+    sys.exit(1)
 X = sum(len(list(isect(snps[k], regions[k]))) for k in snps if k in regions)
 count = 1
 running_mean = X
