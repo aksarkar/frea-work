@@ -6,7 +6,7 @@ library(plyr)
 
 args <- commandArgs(TRUE)
 d <- read.table(args[1], header=FALSE, sep=' ')
-d$z <- (d$V4 - d$V5) / d$V6
+d$z <- (d$V4 - d$V5) / sqrt(d$V6)
 p <- dlply(subset(d, z > 0), .(V1),
            function(X) {
                Y <- X[order(X$z, decreasing=TRUE) < 15,]
