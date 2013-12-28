@@ -1,18 +1,29 @@
 library(Cairo)
 library(ggplot2)
-library(reshape2)
+library(grid)
+library(gridExtra)
+library(plyr)
 
 args <- commandArgs(TRUE)
 d <- read.table(args[1], header=FALSE, sep=' ')
-p <- (ggplot(d) +
-      geom_point(aes(x=V2, y=V3/V4, color=(V3 / 1e4 < .01/50))) +
-      scale_x_discrete(name='Functional category') +
-      scale_y_continuous(name='Fold enrichment (peak shifting null)') +
-      scale_color_manual(values=c('red', 'black'), guide='none') +
-      theme_bw() +
-      facet_grid(V1 ~ .) +
-      theme(axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5),
-            strip.background=element_blank()))
-Cairo(name=sub('.in', '.pdf', args[1]), type='pdf', width=200, height=240, dpi=96, units='mm')
-print(p)
-dev.off()
+d$z <- (d$V4 - d$V5) / d$V6
+p <- dlply(subset(d, z > 0), .(V1),
+           function(X) {
+               Y <- X[order(X$z, decreasing=TRUE) < 15,]
+               ggplotGrob(ggplot(Y, aes(y=V2, x=z)) +
+                      geom_point(size=I(1)) +
+                      scale_x_continuous(name='z-score', limits=c(0, ceiling(max(Y$z)))) +
+                      scale_y_discrete(limits=rev(Y[order(Y$z, decreasing=TRUE),]$V2)) +
+                      facet_grid(V1 ~ .) +
+                      coord_fixed(ratio=.1) +
+                      theme_bw() +
+                      theme(text=element_text(size=6),
+                            rect=element_blank(),
+                            axis.title=element_blank(),
+                            panel.background=element_blank(),
+                            panel.grid.minor=element_blank(),
+                            plot.background=element_blank(),
+                            strip.background=element_blank()))
+           })
+grid.draw(do.call(cbind, c(p, size='last')))
+ggsave(file=sub('.in', '.pdf', args[1]))
