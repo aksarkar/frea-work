@@ -1,8 +1,6 @@
 """Prune SNPs according to LD
 
-Usage: python prune.py
-
-Expects pairs of IDs on stdin. Prints list of tag SNP IDs on stdout.
+Usage: python prune.py SNPS LD [THRESH]
 
 Iteratively pick the SNP which tags the most other SNPs to add to our list,
 then remove it and its LD partners until no pairs of SNPs in LD remains.
