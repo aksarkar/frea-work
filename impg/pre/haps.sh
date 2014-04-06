@@ -1,4 +1,5 @@
 #!/bin/bash
 # Usage: haps.sh CHROMOSOME
 export LC_ALL=C
-paste -d' ' <(zcat /broad/compbio/aksarkar/projects/impute2/1kg/ALL_1000G_phase1integrated_v3_chr${1}_impute_macGT1.legend.gz | awk 'NR > 1 {print $1}') <(zcat /broad/compbio/aksarkar/projects/impute2/1kg/ALL_1000G_phase1integrated_v3_chr${1}_impute_macGT1.hap.gz | tr 01 12 | tr -d ' ') | sort -k1
+prefix=../../../data/1kg/ALL.chr${1}.integrated_phase1_v3.20101123.snps_indels_svs.genotypes.nosing
+paste -d' ' <(zcat $prefix.legend.gz | awk 'NR > 1 {print $1}') <(zcat $prefix.haplotypes.gz | tr 01 12 | tr -d ' ') | sort -k1
