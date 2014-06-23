@@ -30,11 +30,11 @@ num_tagged = lambda x: len(ld[x])
 n = 0
 while ld:
     tag = sorted(ld.keys(), key=num_tagged, reverse=True)[0]
-    print(tag)
     n += 1
     assert n < len(snps)
     prune = ld[tag]
     for snp in prune:
+        print(tag, snp)
         ld.pop(snp)
     for snp in ld:
         ld[snp] = ld[snp].difference(prune)
