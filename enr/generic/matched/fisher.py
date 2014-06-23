@@ -1,10 +1,10 @@
 """Compute hypergeometric p-values for functional enrichment with MAF matched
 negative sets
 
-Usage: python fisher.py MAFS THRESH NTRIALS
+Usage: python fisher.py TABLE THRESH NTRIALS
 
-Expects BED file of SNPs with score = negative log-transformed p-values on
-stdin. MAF is space-separated (rsid, MAF) pairs.
+Expects BED file of SNPs with score = negative log p-value on stdin. TABLE is
+gzipped space-separated (rsid, key1[, key2, ...]) tuples.
 
 Author: Abhishek Sarkar <aksarkar@mit.edu>
 
@@ -19,43 +19,60 @@ import sys
 
 import scipy.stats
 
-thresh = float(sys.argv[2])
-ntrials = int(sys.argv[3])
-breaks = [0.0005, 0.001, 0.005, 0.01, 0.03, 0.05, 0.08, 0.10, 0.15, 0.20,
-          0.30, 0.40, 0.50]
+I = itertools.chain.from_iterable
 
-snps_raw = (line.split() for line in sys.stdin)
-snps = {row[3]: (float(row[4]), int(row[5])) for row in snps_raw}
-
-with gzip.open(sys.argv[1]) as f:
-    data = (str(l, 'utf-8').split() for l in f)
-    filter_ = (d for d in data if d[0] in snps)
+def build_bins(snps, table):
     overlap_bins = collections.defaultdict(list)
     nonoverlap_bins = collections.defaultdict(list)
-    for k, g in itertools.groupby(filter_, key=lambda x: bisect.bisect(breaks, float(x[1]))):
-        for rsid, _ in g:
-            if snps[rsid][1]:
-                overlap_bins[k].append(rsid)
-            else:
-                nonoverlap_bins[k].append(rsid)
-overlaps = {k: len(overlap_bins[k]) for k in overlap_bins}
-total_overlaps = sum(overlaps.values())
+    for rsid, *key in table:
+        k = tuple(key)
+        if snps[rsid][1]:
+            overlap_bins[k].append(rsid)
+        else:
+            nonoverlap_bins[k].append(rsid)
+    return overlap_bins, nonoverlap_bins
 
-I = itertools.chain.from_iterable
-num_top_overlaps = 0
-for s in snps:
-    if snps[s][0] > thresh and snps[s][1]:
-        num_top_overlaps += 1
-for k in overlaps:
-    assert k in nonoverlap_bins
-    assert nonoverlap_bins[k]
-num_top_matches = 0
-for _ in range(ntrials):
-    matches = I((random.choice(nonoverlap_bins[k]) for _ in range(v)) for k, v in overlaps.items())
-    for s in matches:
+def match(overlap_counts, nonoverlap_bins):
+    return I((random.choice(nonoverlap_bins[k]) for _ in range(v)) for k, v in
+             overlap_counts.items() if k in nonoverlap_bins)
+
+def num_top_snps(rsids, thresh):
+    result = 0
+    for s in rsids:
         if snps[s][0] > thresh:
-            num_top_matches += 1
-num_top_matches /= ntrials
-print(*scipy.stats.fisher_exact([[num_top_overlaps, total_overlaps - num_top_overlaps],
-                                 [num_top_matches, total_overlaps - num_top_matches]],
-                                 alternative='greater'))
+            result += 1
+    return result
+
+def permutation_test(overlap_bins, nonoverlap_bins, thresh, ntrials):
+    X = num_top_snps(I(overlap_bins.values()), thresh)
+    success_count = 0
+    running_mean = X
+    running_variance = 0
+    overlap_counts = {k: len(overlap_bins[k]) for k in overlap_bins}
+    for i in range(ntrials):
+        Y = num_top_snps(match(overlap_counts, nonoverlap_bins), thresh)
+        new_mean = running_mean + (Y - running_mean) / (i + 2)
+        running_variance += (Y - running_mean) * (Y - new_mean)
+        running_mean = new_mean
+        if Y >= X:
+            success_count += 1
+    z = (X - running_mean) / math.sqrt(running_variance / ntrials)
+    fold = X / running_mean
+    asymptotic_p = 1 - scipy.stats.norm.cdf(z)
+    exact_p = success_count / ntrials
+    return z, fold, asymptotic_p, exact_p
+
+if __name__ == '__main__':
+    random.seed(0)
+    snps_raw = (line.split() for line in sys.stdin)
+    snps = {row[3]: (float(row[4]), int(row[5])) for row in snps_raw}
+
+    with gzip.open(sys.argv[1]) as f:
+        data = (str(l, 'utf-8').split() for l in f)
+        filter_ = (d for d in data if d[0] in snps)
+        overlap_bins, nonoverlap_bins = build_bins(snps, filter_)
+
+    thresh = float(sys.argv[2])
+    ntrials = int(sys.argv[3])
+    result = permutation_test(overlap_bins, nonoverlap_bins, thresh, ntrials)
+    print(thresh, *result)
