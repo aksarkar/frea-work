@@ -7,7 +7,7 @@ library(plyr)
 args <- commandArgs(TRUE)
 d <- read.table(args[1], header=FALSE, sep=' ')
 d$z <- (d$V4 - d$V5) / sqrt(d$V6)
-p <- dlply(subset(d, z > 0), .(V1),
+p <- dlply(subset(d, z > 0 & V3 / 10000 < .01), .(V1),
            function(X) {
                Y <- X[order(X$z, decreasing=TRUE) < 15,]
                ggplotGrob(ggplot(Y, aes(y=V2, x=z)) +
@@ -25,5 +25,6 @@ p <- dlply(subset(d, z > 0), .(V1),
                             plot.background=element_blank(),
                             strip.background=element_blank()))
            })
-grid.draw(do.call(cbind, c(p, size='last')))
-ggsave(file=sub('.in', '.pdf', args[1]))
+Cairo(file=sub(".in$", ".pdf", args[1]), type='pdf', dpi=96, height=300, width=178, units='mm')
+grid.draw(do.call(rbind, c(p, size='last')))
+dev.off()
