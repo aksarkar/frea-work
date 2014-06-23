@@ -7,5 +7,5 @@ with open(sys.argv[1]) as f:
 for row in csv.reader(sys.stdin, delimiter=' '):
     if row[0] in tags:
         print(row[0], row[1])
-    if row[1] in tags:
+    elif row[1] in tags:
         print(row[1], row[0])
