@@ -30,7 +30,6 @@ do
     esac
 done
 shift
-. $HOME/py32/bin/activate
 markers=${1?"Missing markers"}
 features=${2?"Missing features"}
 phenotype=$(basename $markers | sed s/.bed.gz//)
@@ -46,6 +45,7 @@ bedtools intersect -a $markers -b $features -sorted -c | \
         cat
     fi
 } | \
-    cut -f5,6 | \
-    sort -k1g | \
+    sort -k4 | \
+    awk -f $HOME/code/ld/union.awk | \
+    sort -k1gr | \
     python $HOME/code/enr/generic/cutoffs/cutoffs.py $phenotype $feature${mask+$mod$(basename $mask | sed "s/.bed.*//")} $celltype
