@@ -16,41 +16,43 @@ Author: Abhishek Sarkar <aksarkar@mit.edu>
 
 """
 import math
+import collections
 import itertools
 import sys
 
 import scipy.stats
 
-markers = sys.argv[1]
+phenotype = sys.argv[1]
 feature = sys.argv[2]
 celltype = sys.argv[3]
 exclude = len(sys.argv) > 4
 
-types = [float, int]
-data = [tuple(g(x) for g, x in zip(types, line.split()))
-        for line in sys.stdin]
-if not data:
-    raise ValueError('No data ({}, {}, {})'.format(markers, feature, celltype))
-    
-ns = list(itertools.takewhile(lambda m: m < len(data),
-                              (100 << i for i in itertools.count())))
-if exclude:
-    ns.insert(0, 0)
-    ns.append(2 * ns[-1])
-
-num_overlaps = len([s for s, a in data if a])
-F = scipy.stats.fisher_exact
-if exclude:
-    obs = [len([s for s, a in data[ra:min(rb, len(data))] if a])
-           for ra, rb in zip(ns, ns[1:])]
-    ms = [min(rb, len(data)) - ra for ra, rb in zip(ns, ns[1:])]
-else:
-    obs = [len([s for s, a in data[:n] if a]) for n in ns]
-    ms = ns
-tests = (F([[o, m - o], [num_overlaps - o, len(data) - m - num_overlaps + o]])
-         for o, m in zip(obs, ms))
-
-if exclude:
-    ns.pop(0)
-for n, (o, p) in zip(ns, tests):
-    print(markers, feature, celltype, n, -math.log(p, 10), o)
+data = (line.split() for line in sys.stdin)
+parsed = ((float(s), int(a)) for s, a in data)
+overlaps = [0]
+totals = []
+cutoffs = []
+breaks = (100 << i for i in itertools.count())
+current_bin = next(breaks)
+total_snps = 0
+total_overlaps = 0
+for i, (s, a) in enumerate(parsed):
+    if i >= current_bin:
+        current_bin = next(breaks)
+        overlaps.append(0)
+        totals.append(current_bin - i)
+        cutoffs.append(s)
+    if a:
+        overlaps[-1] += 1
+        total_overlaps += 1
+    total_snps += 1
+if not exclude:
+    overlaps = itertools.accumulate(overlaps)
+    totals = itertools.accumulate(totals)
+for overlap_count, total_count, cutoff in zip(overlaps, totals, cutoffs):
+    contingency = [[overlap_count, min(total_snps, total_count)],
+                   [total_overlaps, total_snps]]
+    odds_ratio, p = scipy.stats.fisher_exact(contingency, alternative='greater')
+    logp = -math.log(p, 10) if p > 0 else 1000
+    print('{} {} {} {:.3f} {:.3f} {:.3f}'.format(phenotype, feature, celltype,
+                                                 cutoff, logp, odds_ratio))
