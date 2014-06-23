@@ -16,6 +16,9 @@
     else if ($1 ~ /^T/) {
         print >"tx.in"
     }
+    else if (/All/) {
+        print >"all.in"
+    }
     else {
         print >"other.in"
     }
