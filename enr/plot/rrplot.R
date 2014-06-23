@@ -1,111 +1,156 @@
-# RR plots for enrichment down the rank list
-# Author: Abhishek Sarkar <aksarkar@mit.edu>
+## RR plots for enrichment down the rank list
+## Author: Abhishek Sarkar <aksarkar@mit.edu>
 library(directlabels)
 library(ggplot2)
 library(grid)
 library(plyr)
 library(Cairo)
 
-scale_state_aggregate <-
-  scale_color_manual(name='State (aggregate)',
-                     values=c('promoter' = '#ff0000', 'enhancer' = '#faca00',
-                       'insulator' = '#09befe', 'transcribed' = '#00b050',
-                       'repressed' = '#7f7f7f', 'other' = 'black',
-                       'poly-A+-RNA-seq' = '#005c1f', 'diff-expressed' = '#0060a0'))
+source('~/code/enr/plot/color_roadmap.R')
 
 filter <- function(n) {
-  function(d, ...) {
-    head(d[order(d$y, decreasing=TRUE),], n=n)
-  }
+    function(d, ...) {
+        head(d[order(d$y, decreasing=TRUE),], n=n)
+    }
 }
 
 my.bumpup <- function(d, ...) {
-  if (nrow(d) > 1) {
-    return(bumpup(d))
-  }
-  else {
-    return(d)
-  }
+    if (nrow(d) > 1) {
+        return(bumpup(d))
+    }
+    else {
+        return(d)
+    }
 }
 
 bumpdown <- function(d,...) {
-  if (nrow(d) > 1) {
-    d <- calc.boxes(d)[order(d$y, decreasing=TRUE),]
-    "%between%" <- function(v,lims)lims[1]<v&v<lims[2]
-    obox <- function(x,y){
-      tocheck <- with(x,c(left,(right-left)/2+left,right))
-      tocheck %between% with(y,c(left,right))
+    if (nrow(d) > 1) {
+        d <- calc.boxes(d)[order(d$y, decreasing=TRUE),]
+        "%between%" <- function(v,lims)lims[1]<v&v<lims[2]
+        obox <- function(x,y){
+            tocheck <- with(x,c(left,(right-left)/2+left,right))
+            tocheck %between% with(y,c(left,right))
+        }
+        for(i in 2:nrow(d)){
+            dif <- d$top[i]-d$bottom[i-1]
+            overlap <- c(obox(d[i,],d[i-1,]),obox(d[i-1,],d[i,]))
+            if(dif > 0 && any(overlap)){
+                d$bottom[i] <- d$bottom[i] - dif
+                d$top[i] <- d$top[i] - dif
+                d$y[i] <- d$y[i] - dif
+            }
+        }
     }
-    for(i in 2:nrow(d)){
-      dif <- d$top[i]-d$bottom[i-1]
-      overlap <- c(obox(d[i,],d[i-1,]),obox(d[i-1,],d[i,]))
-      if(dif > 0 && any(overlap)){
-        d$bottom[i] <- d$bottom[i] - dif
-        d$top[i] <- d$top[i] - dif
-        d$y[i] <- d$y[i] - dif
-      }
-    }
-  }
-  d
+    d
 }
 
 dev <- function(X) {
-  ddply(X, .(phenotype, feature, celltype), transform,
-        y=(count - expected) / max(count))
+    ddply(X, .(phenotype, feature, celltype), transform,
+          y=(count - expected) / max(count))
 }
 
 fold <- function(X) {
-  transform(X, y=count / (1 + expected))
+    transform(X, y=count / (1 + expected))
 }
 
 z.score <- function(X, Y, f) {
-  transform(merge(f(X),
-                  ddply(f(Y), .(total, phenotype, celltype, feature),
-                        function(x) c(m=mean(x$y), s=sd(x$y)))),
-            y=(y - m) / s)
+    transform(merge(f(X),
+                    ddply(f(Y), .(total, phenotype, celltype, feature),
+                          function(x) c(m=mean(x$y), s=sd(x$y)))),
+              y=(y - m) / s)
 }
 
-rrplot <- function(X, name, zero, cutoff=30000, last=TRUE) {
-  stopifnot(is.data.frame(X))
-  stopifnot(is.numeric(zero))
-  stopifnot(cutoff > 0)
-  if (last) {
-    pos <- "last.points"
-    lim <- c(0, 1.6) * cutoff
-  }
-  else {
-    pos <- "first.points"
-    lim <- c(-.6, 1) * cutoff
-  }
-  return(ggplot(X[X$total <= cutoff, ],
-                aes(x=total, y=y, color=celltype)) +
-         geom_line(size=I(.25)) +
-         geom_hline(yintercept=zero, color="black", size=I(.25)) +
-         geom_dl(aes(label=celltype),
-                 method=list(cex=.8, pos, filter(10), "bumpdown")) +
-         facet_grid(phenotype ~ feature, scale="free") +
-         scale_x_continuous(name="SNPs ranked by increasing p-value", limits=lim,
-                            breaks=seq(0, cutoff, cutoff / 4)) +
-         scale_y_continuous(name=name) +
-         theme_bw() +
-         theme(strip.background=element_blank(),
-               legend.position="none"))
+peaks <- function(series, span=3, ties.method="first") {
+    stopifnot((span <- as.integer(span)) %% 2 == 1)
+    z <- embed(series, span)
+    s <- span %/% 2
+    v <- max.col(z, ties.method=ties.method) == 1 + s
+    pad <- rep(FALSE, s)
+    result <- c(pad, v, pad)
+    result
 }
 
+elbow <- function(X) {
+    ddply(X, .(phenotype, celltype, feature),
+          function(Y) {
+              Z <- Y[chull(x=Y$total, y=Y$y),]
+              ## Z <- transform(Z, d2z=c(NA, diff(Z$y, differences=2), NA))
+              ## Z[which.min(Z$d2z),]
+              Z
+          })
+}
+
+rrplot <- function(X, name, zero, cutoff, label=TRUE, last=TRUE) {
+    stopifnot(is.data.frame(X))
+    stopifnot(is.numeric(zero))
+    stopifnot(cutoff > 0)
+    my.margin <- unit(c(0, margin, 0, 0), "in")
+    if (label && last) {
+        pos <- "last.points"
+    }
+    else if (label) {
+        pos <- "first.points"
+    }
+    ## write.table(elbow(X), sub(".in.gz$", ".out", args[1]),
+    ##             col.names=FALSE, row.names=FALSE, quote=FALSE)
+    ## X <- X[X$total <= cutoff, ]
+    ## Y <- X[X$total == cutoff, ]
+    ## write.table(rev(Y[order(Y$y),]$celltype), sub(".in.gz$", ".txt", args[1]),
+    ##             col.names=FALSE, row.names=FALSE, quote=FALSE)
+    P <- (ggplot(elbow(X), aes(x=total, y=y, color=celltype)) +
+          geom_line(size=I(.25)) +
+          geom_hline(yintercept=zero, color="black", size=I(.25)) +
+          annotate('text', x=-Inf, y=Inf, size=2.5, hjust=1, vjust=0,
+                   label=sprintf("(10^{%d})", floor(log10(max(X$y)))), parse=TRUE) +
+          facet_grid(phenotype ~ feature, scale="free") +
+          scale_x_continuous(name="SNP rank by increasing p-value", limits=c(0, cutoff),
+                             breaks=seq(0, cutoff, cutoff / 4)) +
+          scale_y_continuous(name=name, labels=function(x) {sub("e.*", "", sprintf("%.1e", x))}) +
+          scale_color_roadmap +
+          theme_bw() +
+          theme(strip.background=element_blank(),
+                legend.position="none",
+                plot.margin=my.margin))
+    if (label) {
+        P <- P + geom_dl(aes(label=celltype),
+                         method=list(cex=.6, pos, filter(10), "bumpdown"))
+    }
+    t <- ggplot_gtable(ggplot_build(P))
+    t$layout$clip[t$layout$name == "panel"] <- "off"
+    grid.draw(t)
+}
+
+rrplot.dev <- function(X, type) {
+    rrplot.device(X, 1, type)
+    rrplot(dev(X), "Cumulative deviation from expected count", 0, 100000)
+    dev.off()
+}
+
+rrplot.fold <- function(X) {
+    rrplot(fold(D), "Fold enrichment", 1, 50000, TRUE, FALSE)
+}
+
+rrplot.example <- function(X, type) {
+    rrplot.device(X, 1.4, type)
+    rrplot(dev(X), "Cumulative deviation from expected count", 0, 6.2e6)
+    dev.off()
+}
+
+rrplot.device <- function(X, aspect, type) {
+    panelsize <- 4
+    h <- panelsize * length(table(X$phenotype))
+    w <- (aspect * panelsize + margin) * length(table(X$feature))
+    if (type == "pdf") {
+        dpi <- "auto"
+    }
+    else {
+        dpi <- 200
+    }
+    Cairo(file=sub(".in.gz$", sprintf(".%s", type), args[1]), type=type, width=w, height=h, units="in", dpi=dpi)
+}
+
+margin <- 4
 args <- commandArgs(TRUE)
-D <- read.csv(args[1], header=FALSE)
+D <- read.csv(gzfile(args[1]), header=FALSE)
 colnames(D) <- c("total", "phenotype", "celltype", "feature", "count", "expected")
-if (length(args) > 1) {
-  E <- read.csv(args[2], header=FALSE)
-  colnames(E) <- c(colnames(D), "rep")
-}
-panelsize <- 15
-h <- panelsize * length(table(D$phenotype))
-w <- 1.6 * panelsize * length(table(D$feature))
-Cairo(file=gsub(".in", ".pdf", args[1]), type="pdf", width=w, height=h, units="cm", dpi="auto")
-rrplot(fold(D), "Fold enrichment", 1, 20000)
-if (exists("E")) {
-  rrplot(z.score(D, E, fold), "Z-score (fold enrichment)", 0, 150000)
-}
-warnings()
-dev.off()
+do.call(args[2], list(D, "pdf"))
