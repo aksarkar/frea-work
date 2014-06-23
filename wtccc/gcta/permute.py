@@ -1,7 +1,7 @@
 import random
 import sys
 
-random.seed(1394215186)
+random.seed(sys.argv[1])
 data = [line.split() for line in sys.stdin]
 status = [d[2] for d in data]
 random.shuffle(status)
