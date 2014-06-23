@@ -1,18 +1,17 @@
 # Construct a Plink map file for only well-imputed SNPs
 #
-# Expects IMPUTE2 info file on stdin, writes map file on stdou.
+# Expects IMPUTE2 info file on stdin, writes map file on stdout.
 #
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
-BEGIN {
-    if (chr == "") {
-        chr = 0
-    }
+NR == 1 {
+    split(FILENAME, a, ".")
+    chr = a[1]
 }
 
 $2 == "." {
     $2 = chr ":" $3
 }
 
-!/snp_id/ && $5 > .6 {
+NR > 1 && $4 >= .01 && $4 <= .99 && $5 >= .6 {
     print chr, $2, 0, $3
 }
