@@ -1,14 +1,36 @@
+function init() {
+    count = 0
+    hits = 0
+    logp = 0
+    name = $4
+    union = 0
+}
+
 BEGIN {
     OFS = "\t"
+    if (op == "") {
+        op = "union"
+    }
+}
+
+NR == 1 {
+    init()
 }
 
 $4 != name {
-    if (name != "") {
+    if (op == "union") {
         print logp, union
     }
-    name = $4
-    logp = $5
-    union = $6
+    else if (op == "sum") {
+        print logp, hits
+    }
+    else if (op == "weight") {
+        print logp, hits/count
+    }
+    else {
+        exit 1
+    }
+    init()
 }
 
 $5 > logp {
@@ -17,4 +39,9 @@ $5 > logp {
 
 $6 == 1 {
     union = 1
+    hits += 1
+}
+
+{
+    count += 1
 }

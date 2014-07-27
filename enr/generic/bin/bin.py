@@ -14,10 +14,10 @@ feature = sys.argv[2]
 celltype = sys.argv[3]
 binsize = int(sys.argv[4])
 cumulative = len(sys.argv) > 5
-data = [int(x) for x in sys.stdin]
-raw_exp = itertools.repeat(binsize / (1 + len(data)) * data.count(1))
+data = [float(x) for x in sys.stdin]
+raw_exp = itertools.repeat(binsize / (1 + len(data)) * sum(data))
 bins = (data[i:i+binsize] for i in range(0, len(data), binsize))
-raw_counts = (b.count(1) for b in bins)
+raw_counts = (sum(b) for b in bins)
 if cumulative:
     counts = itertools.accumulate(raw_counts)
     exp = itertools.accumulate(raw_exp)

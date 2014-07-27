@@ -9,7 +9,7 @@
 
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
 set -e
-eval set -- $(getopt -o "ci:s:t:r" -l "cumulative,intersect:subtract:sort" -n $0 -- $@)
+eval set -- $(getopt -o "ci:l:s:t:r" -l "cumulative,intersect:ld-correction:subtract:sort" -n $0 -- $@)
 while [[ $1 != "--" ]]
 do
     case $1 in
@@ -23,6 +23,11 @@ do
             mod="+"
             shift
             mask=$1
+            shift
+            ;;
+        -l|--ld-correction)
+            shift
+            op=$1
             shift
             ;;
         -r|--sort)
@@ -69,7 +74,7 @@ c=$(echo $features | sed "s#.*features##" | cut -d/ -f3- | \
     fi
 } | \
     sort -k4 | \
-    awk -f $HOME/code/ld/union.awk | \
+    awk -vop=$op -f $HOME/code/ld/union.awk | \
     sort -k1gr | \
     cut -f2 | \
     python $HOME/code/enr/generic/bin/bin.py $phenotype $f $c $binsize $cumulative
