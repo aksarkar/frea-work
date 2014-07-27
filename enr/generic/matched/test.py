@@ -1,7 +1,6 @@
-"""Compute hypergeometric p-values for functional enrichment with MAF matched
-negative sets
+"""Compute p-values for functional enrichment against matched sets
 
-Usage: python fisher.py TABLE THRESH NTRIALS
+Usage: python test.py TABLE THRESH NTRIALS
 
 Expects BED file of SNPs with score = negative log p-value on stdin. TABLE is
 gzipped space-separated (rsid, key1[, key2, ...]) tuples.
@@ -56,11 +55,9 @@ def permutation_test(overlap_bins, nonoverlap_bins, thresh, ntrials):
         running_mean = new_mean
         if Y >= X:
             success_count += 1
-    z = (X - running_mean) / math.sqrt(running_variance / ntrials)
-    fold = X / running_mean
-    asymptotic_p = 1 - scipy.stats.norm.cdf(z)
+    running_variance /= ntrials
     exact_p = success_count / ntrials
-    return z, fold, asymptotic_p, exact_p
+    return X, running_mean, running_variance, exact_p
 
 if __name__ == '__main__':
     random.seed(0)
@@ -75,4 +72,4 @@ if __name__ == '__main__':
     thresh = float(sys.argv[2])
     ntrials = int(sys.argv[3])
     result = permutation_test(overlap_bins, nonoverlap_bins, thresh, ntrials)
-    print(thresh, *result)
+    print('{:.3f} {:.3f} {:.3f} {:.3f} {:.3f}'.format(thresh, *result))
