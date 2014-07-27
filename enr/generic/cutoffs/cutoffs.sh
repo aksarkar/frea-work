@@ -8,7 +8,7 @@
 
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
 set -e
-eval set -- $(getopt -o "i:s:" -l "intersect:subtract:" -n $0 -- $@)
+eval set -- $(getopt -o "ei:s:" -l "intersect:subtract:" -n $0 -- $@)
 while [[ $1 != "--" ]]
 do
     case $1 in
@@ -25,6 +25,10 @@ do
             mod="-"
             shift
             mask=$1
+            shift
+            ;;
+        -e|--exclude)
+            exclude="1"
             shift
             ;;
     esac
@@ -48,4 +52,4 @@ bedtools intersect -a $markers -b $features -sorted -c | \
     sort -k4 | \
     awk -f $HOME/code/ld/union.awk | \
     sort -k1gr | \
-    python $HOME/code/enr/generic/cutoffs/cutoffs.py $phenotype $feature${mask+$mod$(basename $mask | sed "s/.bed.*//")} $celltype
+    python $HOME/code/enr/generic/cutoffs/cutoffs.py $phenotype $feature${mask+$mod$(basename $mask | sed "s/.bed.*//")} $celltype $exclude
