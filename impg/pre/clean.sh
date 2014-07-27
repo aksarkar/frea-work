@@ -1,1 +1,1 @@
-find -name "*.beta" -o -name "*.snp" -o -name "*.txt" -o -name "*.typed" -o -name "log" -o -path "./in/*.names" | parallel -X rm
+parallel -X rm ::: in/*.txt in/*.typed */*.names maps/*.map haps/*.haps beta/*.beta beta/*.snp out/*.txt
