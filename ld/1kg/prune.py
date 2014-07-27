@@ -31,7 +31,7 @@ n = 0
 while ld:
     tag = sorted(ld.keys(), key=num_tagged, reverse=True)[0]
     n += 1
-    assert n < len(snps)
+    assert n <= len(snps)
     prune = ld[tag]
     for snp in prune:
         print(tag, snp)
