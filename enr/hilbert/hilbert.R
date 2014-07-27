@@ -2,6 +2,7 @@ library(bitops)
 library(ggplot2)
 library(grid)
 library(plyr)
+library(Cairo)
 
 x.to.uv <- function(x, n) {
   u <- 0
@@ -63,6 +64,6 @@ d$chr <- factor(d$chr,
                 levels=c(vapply(seq(1, 22), function(x) sprintf('chr%d', x), ''),
                   'chrX'))
 p <- hilbert.plot(d, e)
-svg(file=sub(".in", ".svg", args[1]), width=11, height=8.5)
+Cairo(file=sub(".in", ".pdf", args[1]), type="pdf", width=11, height=8.5, units="in", dpi="auto")
 print(p)
 dev.off()
