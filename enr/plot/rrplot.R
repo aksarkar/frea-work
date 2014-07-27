@@ -39,6 +39,7 @@ bumpdown <- function(d,...) {
                 d$top[i] <- d$top[i] - dif
                 d$y[i] <- d$y[i] - dif
             }
+            d$x <- d$x + .1
         }
     }
     d
@@ -70,16 +71,6 @@ peaks <- function(series, span=3, ties.method="first") {
     result
 }
 
-elbow <- function(X) {
-    ddply(X, .(phenotype, celltype, feature),
-          function(Y) {
-              Z <- Y[chull(x=Y$total, y=Y$y),]
-              ## Z <- transform(Z, d2z=c(NA, diff(Z$y, differences=2), NA))
-              ## Z[which.min(Z$d2z),]
-              Z
-          })
-}
-
 rrplot <- function(X, name, zero, cutoff, label=TRUE, last=TRUE) {
     stopifnot(is.data.frame(X))
     stopifnot(is.numeric(zero))
@@ -91,13 +82,11 @@ rrplot <- function(X, name, zero, cutoff, label=TRUE, last=TRUE) {
     else if (label) {
         pos <- "first.points"
     }
-    ## write.table(elbow(X), sub(".in.gz$", ".out", args[1]),
-    ##             col.names=FALSE, row.names=FALSE, quote=FALSE)
-    ## X <- X[X$total <= cutoff, ]
-    ## Y <- X[X$total == cutoff, ]
-    ## write.table(rev(Y[order(Y$y),]$celltype), sub(".in.gz$", ".txt", args[1]),
-    ##             col.names=FALSE, row.names=FALSE, quote=FALSE)
-    P <- (ggplot(elbow(X), aes(x=total, y=y, color=celltype)) +
+    X <- X[X$total <= cutoff, ]
+    Y <- X[X$total == cutoff, ]
+    write.table(rev(Y[order(Y$y),]$celltype), sub(".in.gz$", ".txt", args[1]),
+                col.names=FALSE, row.names=FALSE, quote=FALSE)
+    P <- (ggplot(X, aes(x=total, y=y, color=factor(celltype))) +
           geom_line(size=I(.25)) +
           geom_hline(yintercept=zero, color="black", size=I(.25)) +
           annotate('text', x=-Inf, y=Inf, size=2.5, hjust=1, vjust=0,
@@ -149,7 +138,7 @@ rrplot.device <- function(X, aspect, type) {
     Cairo(file=sub(".in.gz$", sprintf(".%s", type), args[1]), type=type, width=w, height=h, units="in", dpi=dpi)
 }
 
-margin <- 4
+margin <- 1
 args <- commandArgs(TRUE)
 D <- read.csv(gzfile(args[1]), header=FALSE)
 colnames(D) <- c("total", "phenotype", "celltype", "feature", "count", "expected")
