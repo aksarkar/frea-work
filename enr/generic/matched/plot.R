@@ -3,6 +3,7 @@ library(ggplot2)
 library(plyr)
 library(scales)
 source("~/code/enr/plot/color_roadmap.R")
+source("~/code/enr/plot/theme_nature.R")
 
 bumpdown <- function(d,...) {
     if (nrow(d) > 1) {
@@ -40,7 +41,7 @@ cutoffs.plot <- function(X, ylab) {
              method=list(cex=.6, 'last.points', 'filter', 'bumpdown')) +
      scale_x_continuous(name='Negative log association p-value', breaks=breaks, labels=function(x) {sprintf("%.1f", x)}) +
      scale_y_continuous(name=ylab) +
-     ## scale_color_roadmap +
+     scale_color_roadmap +
      expand_limits(x=0) +
      facet_grid(V1 ~ V2, scales='free_y') +
      theme_bw() +
@@ -65,6 +66,18 @@ fold.plot <- function(X) {
 hyperg.plot <- function(X) {
     X$y <- X$V5
     cutoffs.plot(X, ylab="Negative log enrichment p-value")
+}
+
+slice.plot <- function(X) {
+    X$y <- (X$V5 - X$V6) / sqrt(X$V7)
+    X$x <- factor(X$V3, levels=enh_cluster_ordering)
+    (ggplot(X, aes(x=x, y=y, color=x)) +
+     geom_point(size=I(1)) +
+     scale_x_discrete(name="Cluster") +
+     scale_y_continuous(name="Enrichment z-score") +
+     scale_color_roadmap +
+     theme_nature +
+     theme(legend.position='none'))
 }
 
 args <- commandArgs(TRUE)
