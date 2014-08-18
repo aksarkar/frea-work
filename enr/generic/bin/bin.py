@@ -7,7 +7,10 @@ Author: Abhishek Sarkar <aksarkar@mit.edu>
 """
 
 import itertools
+import signal
 import sys
+
+signal.signal(signal.SIGPIPE, signal.SIG_DFL)
 
 phenotype = sys.argv[1]
 feature = sys.argv[2]
