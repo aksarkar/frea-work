@@ -1,7 +1,9 @@
+library(Cairo)
 library(directlabels)
 library(ggplot2)
 library(plyr)
 library(scales)
+
 source("~/code/enr/plot/color_roadmap.R")
 source("~/code/enr/plot/theme_nature.R")
 
@@ -32,24 +34,20 @@ filter <- function(d, ...) {
 }
 
 cutoffs.plot <- function(X, ylab) {
-    ## X$x <- -pchisq(X$V4, df=1, log.p=TRUE, lower.tail=FALSE)
+    ## X$x <- -log10(1 - pchisq(X$V4, 1))
     X$x <- X$V4
     breaks <- unique(X$x)
     (ggplot(X, aes(x=x, y=y, color=V3)) +
-     geom_line(size=I(.25)) +
+     geom_line(size=I(.35 / ggplot2:::.pt)) +
      geom_dl(aes(label=V3),
              method=list(cex=.6, 'last.points', 'filter', 'bumpdown')) +
-     scale_x_continuous(name='Negative log association p-value', breaks=breaks, labels=function(x) {sprintf("%.1f", x)}) +
-     scale_y_continuous(name=ylab) +
+     scale_x_continuous(name='Negative log association p-value', breaks=breaks, labels=function(x) {sprintf("%.1f", x)}, expand=c(0, 0)) +
+     scale_y_continuous(name=ylab, expand=c(0, 0)) +
      scale_color_roadmap +
-     expand_limits(x=0) +
-     facet_grid(V1 ~ V2, scales='free_y') +
-     theme_bw() +
+     theme_nature +
      theme(legend.position='none',
-           panel.grid.minor=element_blank(),
-           plot.margin=unit(c(0, margin, 0, 0), "in"),
-           strip.background=element_blank(),
-           axis.text.x=element_text(angle=-90, hjust=0, vjust=.5)
+           plot.margin=unit(c(0, margin, 0, 0), "mm"),
+           axis.text.x=element_text(angle=90, hjust=1, vjust=.5)
          ))
 }
 
@@ -65,7 +63,7 @@ fold.plot <- function(X) {
 
 hyperg.plot <- function(X) {
     X$y <- X$V5
-    cutoffs.plot(X, ylab="Negative log enrichment p-value")
+    cutoffs.plot(X, ylab="Negative log enrichment p-value") + theme(legend.position='none')
 }
 
 slice.plot <- function(X) {
@@ -82,14 +80,14 @@ slice.plot <- function(X) {
 
 args <- commandArgs(TRUE)
 X <- read.table(args[1], header=FALSE, sep=' ')
-margin <- 1
-panelsize <- 4
-aspect=1
-h <- panelsize * length(table(X$V1))
-w <- (aspect * panelsize + margin) * length(table(X$V2))
+margin <- 8
+panelsize <- 60 - margin
+aspect <- 1
+h <- panelsize
+w <- (aspect * panelsize + margin)
 P <- do.call(args[2], list(X))
-t <- ggplot_gtable(ggplot_build(P))
-t$layout$clip[t$layout$name == "panel"] <- "off"
-pdf(file=gsub("in$", "pdf", args[1]), height=4 * length(table(X$V1)), width=w)
-grid.draw(t)
+## t <- ggplot_gtable(ggplot_build(P))
+## t$layout$clip[t$layout$name == "panel"] <- "off"
+Cairo(type='pdf', file=gsub("in$", "pdf", args[1]), height=h, width=w, units='mm', dpi='auto')
+print(P)
 dev.off()

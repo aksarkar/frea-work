@@ -12,6 +12,7 @@ import bisect
 import collections
 import gzip
 import itertools
+import operator
 import math
 import random
 import sys
