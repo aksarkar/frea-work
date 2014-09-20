@@ -62,11 +62,11 @@ scale_color_roadmap <-
                            "E057" = "#FF9D0C",
                            "E058" = "#FF9D0C",
                            "E059" = "#FF9D0C",
-                           "E060" = "#FF0000", #thrown out
+                           ## "E060" = "#FF0000", thrown out
                            "E061" = "#FF9D0C",
                            "E062" = "#55A354",
                            "E063" = "#AF5B39",
-                           "E064" = "#FF0000", #thrown out
+                           ## "E064" = "#FF0000", thrown out
                            "E065" = "#D56F80",
                            "E066" = "#999999",
                            "E067" = "#C5912B",
