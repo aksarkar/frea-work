@@ -15,9 +15,10 @@ p <- (ggplot(d, aes(x=V2, y=V3)) +
       scale_x_log10(name='Top n tags', labels=unique(d$V2), breaks=unique(d$V2)) +
       theme_nature +
       theme(axis.title.y=element_text(angle=0),
-            axis.text.x=element_text(angle=-90, hjust=0, vjust=.5)
+            axis.text=element_text(size=5),
+            axis.text.x=element_text(angle=-90, hjust=0, vjust=.5),
+            plot.margin=unit(c(1, 0, 0, 0), 'mm')
             ))
-Cairo(dpi='auto', file=sub('.txt', '.pdf', args[1]), height=50,
-      type='pdf', units='mm', width=89)
+Cairo(dpi='auto', file=sub('.txt', '.pdf', args[1]), height=37, type='pdf', units='mm', width=60)
 print(p)
 dev.off()
