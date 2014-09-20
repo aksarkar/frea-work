@@ -1,9 +1,7 @@
 import csv
+import math
 import sys
 
-import scipy.stats
-
-N = scipy.stats.norm
 if __name__ == '__main__':
     filter_comment = (x for x in sys.stdin if x.strip() and x[0] != '#')
     reader = csv.DictReader(filter_comment, delimiter='\t')
@@ -14,4 +12,4 @@ if __name__ == '__main__':
               row['Chr Position'],
               int(row['Chr Position']) + 1,
               row['SNP ID'],
-              N.isf(float(row['P-value'])), sep='\t')
+              -math.log10(float(row['P-value'])), sep='\t')
