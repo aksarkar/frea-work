@@ -85,7 +85,7 @@ rrplot <- function(X, zero, cutoff, scales.labels, direct.labels) {
                            expand=c(0, 0)) +
         scale_y_continuous(labels=function(x) {sub('e.*', '', sprintf('%.1e', x))},
                            expand=c(0, 0)) +
-        ## scale_color_roadmap +
+        scale_color_roadmap +
         scales.labels +
         theme_nature +
         theme(legend.position='none',
