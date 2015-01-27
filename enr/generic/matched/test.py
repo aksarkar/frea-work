@@ -5,19 +5,17 @@ Usage: python test.py TABLE THRESH NTRIALS
 Expects BED file of SNPs with score = negative log p-value on stdin. TABLE is
 gzipped space-separated (rsid, key1[, key2, ...]) tuples.
 
+This implementation resamples overlaps and counts how many resampled SNPs
+exceed THRESH over resampled sets.
+
 Author: Abhishek Sarkar <aksarkar@mit.edu>
 
 """
-import bisect
 import collections
 import gzip
 import itertools
-import operator
-import math
 import random
 import sys
-
-import scipy.stats
 
 I = itertools.chain.from_iterable
 
@@ -45,6 +43,8 @@ def num_top_snps(rsids, thresh):
 
 def permutation_test(overlap_bins, nonoverlap_bins, thresh, ntrials):
     X = num_top_snps(I(overlap_bins.values()), thresh)
+    if X == 0:
+        return 0, 0, 0, 1
     success_count = 0
     running_mean = X
     running_variance = 0

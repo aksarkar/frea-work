@@ -68,26 +68,34 @@ hyperg.plot <- function(X) {
 
 slice.plot <- function(X) {
     X$y <- (X$V5 - X$V6) / sqrt(X$V7)
-    X$x <- factor(X$V3, levels=enh_cluster_ordering)
-    (ggplot(X, aes(x=x, y=y, color=x)) +
-     geom_point(size=I(1)) +
-     scale_x_discrete(name="Cluster") +
+    p <- stats::p.adjust(1 - pnorm(X$y), 'fdr')
+    thresh <- max(X$y[which(p > 1e-4)])
+    (ggplot(X, aes(x=x, y=y, fill=x)) +
+     geom_bar(stat='identity') +
+     geom_hline(yintercept=thresh, color='red', size=.35 / ggplot2:::.pt) +
      scale_y_continuous(name="Enrichment z-score") +
-     scale_color_roadmap +
+     scale_fill_roadmap +
      theme_nature +
-     theme(legend.position='none'))
+     theme(legend.position='none',
+           axis.text.x=element_blank()))
 }
+
+cell_plot <- function(X) {
+  X$x <- factor(X$V3, levels=eid_ordering)
+  slice.plot(X) + scale_x_discrete(name="Reference epigenome")     
+}
+
+clusters_plot <- function(X) {
+  X$x <- factor(X$V3, levels=enh_cluster_ordering)
+  slice.plot(X) + scale_x_discrete(name="Enhancer module")
+}
+
 
 args <- commandArgs(TRUE)
 X <- read.table(args[1], header=FALSE, sep=' ')
-margin <- 8
-panelsize <- 60 - margin
-aspect <- 1
-h <- panelsize
-w <- (aspect * panelsize + margin)
+h <- 50
+w <- 183
 P <- do.call(args[2], list(X))
-## t <- ggplot_gtable(ggplot_build(P))
-## t$layout$clip[t$layout$name == "panel"] <- "off"
 Cairo(type='pdf', file=gsub("in$", "pdf", args[1]), height=h, width=w, units='mm', dpi='auto')
 print(P)
 dev.off()
