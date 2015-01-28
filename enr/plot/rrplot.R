@@ -6,6 +6,7 @@ library(grid)
 library(plyr)
 library(reshape)
 library(scales)
+library(zoo)
 library(Cairo)
 
 source('~/code/enr/plot/color_roadmap.R')
@@ -54,7 +55,8 @@ dev <- function(X) {
 }
 
 derivative <- function(X) {
-  ddply(X, .(phenotype, feature, celltype), y=c(0, diff(y)))
+  ddply(X, .(phenotype, feature, celltype), transform,
+        y=c(rollmean(diff(y), 5, align='left'), y[length(y)-4:length(y)]))
 }
 
 cumulative.fraction <- function(X) {
@@ -62,7 +64,7 @@ cumulative.fraction <- function(X) {
         y=count / max(count))
 }
 
-rrplot.annotate <- function(X, cutoff) {
+rrplot_annotate <- function(X, cutoff) {
   Y <- X[X$total == cutoff, ]
   write.table(rev(Y[order(Y$y),]$celltype), sub('.in.gz$', '.txt', args[1]),
               col.names=FALSE, row.names=FALSE, quote=FALSE)
@@ -78,29 +80,42 @@ peaks <- function(series, span=3, ties.method='first') {
   result
 }
 
+rrplot_elbow <- function(X) {
+  inflections <- daply(X, .(phenotype, feature, celltype), function(x) {
+    hull <- x[order(chull(x$total, x$y)),]
+    ddy <- diff(hull$y, differences=2)
+    hull[which(diff(sign(ddy)) != 0)[1] + 1,]$total
+  })
+  rank_cutoff <- max(inflections[!is.na(inflections)])
+  print(rank_cutoff)
+  geom_vline(xintercept=rank_cutoff, color='red', size=I(.5 / ggplot2:::.pt))
+}
+
 rrplot <- function(X, zero, cutoff, scales.labels, direct.labels) {
   stopifnot(is.data.frame(X))
   stopifnot(is.numeric(zero))
   stopifnot(is.numeric(cutoff))
   stopifnot(cutoff > 0)
+  elbow <- rrplot_elbow(X)
   X <- X[X$total <= cutoff, ]
-  exponent <- ceiling(log10(max(abs(X$y))))
   (ggplot(X, aes(x=total, y=y, color=factor(celltype))) +
    geom_line(size=I(.35 / ggplot2:::.pt)) +
    geom_hline(yintercept=zero, color='black', size=I(.5 / ggplot2:::.pt)) +
+   elbow +
    direct.labels +
-   annotate('text', x=-Inf, y=Inf, size=(5 / ggplot2:::.pt), hjust=1, vjust=0, label=sprintf('(10^{%d})', floor(log10(max(abs(X$y))))), parse=TRUE) +
-   scale_x_continuous(labels=comma, limits=c(0, cutoff),                      breaks=seq(0, cutoff, cutoff / 4),                      expand=c(0, 0)) +
-   scale_y_continuous(labels=function(x) {sub('e.*', '', sprintf('%.1e', x))},                           expand=c(0, 0)) +
+   scale_x_continuous(labels=comma, limits=c(0, cutoff), breaks=seq(0, cutoff, cutoff / 4), expand=c(0, 0)) +
+   scale_y_continuous(expand=c(0, 0)) +
    scale_color_roadmap +
    scales.labels +
    theme_nature +
    theme(legend.position='none',
          axis.text=element_text(size=5),
+         axis.text.y=element_blank(),
+         axis.ticks.y=element_blank(),
          plot.margin=unit(c(7 / ggplot2:::.pt, margin, 0, 0), 'mm')))
 }
 
-rrplot.dev <- function(X, xlab, cutoff) {
+rrplot_dev <- function(X, xlab, cutoff) {
   direct.labels <- geom_dl(aes(label=celltype),
                            method=list(cex=7/16,
                              last.points,
@@ -112,23 +127,22 @@ rrplot.dev <- function(X, xlab, cutoff) {
   rrplot(dev(X), 0, as.numeric(cutoff), scales.labels, direct.labels)
 }
 
-rrplot.derivative <- function(X, cutoff=100000) {
+rrplot_derivative <- function(X, cutoff=50000) {
   direct.labels <- geom_dl(aes(label=celltype),
-                           method=list(cex=7/16,
-                             last.points,
+                           method=list(cex=5/16,
+                             first.points,
                              calc.boxes,
-                             dl.trans(x = x + .1),
-                             top(10),
+                             top(5),
                              'bumpdown'))
   scales.labels <- labs(x=xlab, y='Cumulative deviation')
-  rrplot(derivative(dev(X)), 0, as.numeric(cutoff), scales.labels, direct.labels)
+  rrplot(derivative(dev(X)), 0, as.numeric(cutoff), labs(x='Top SNPs by p-value', y='Derivative of cumulative deviation'), direct.labels)
 }
 
-rrplot.snps <- function(X, cutoff=100000) {
-  rrplot.dev(X, 'SNP rank by p-value', cutoff)
+rrplot_snps <- function(X, cutoff=50000) {
+  rrplot_dev(X, 'SNP rank by p-value', cutoff)
 }
 
-rrplot.corr <- function(X) {
+rrplot_corr <- function(X) {
   scales.labels <- labs(x='WTCCC1 rank by p-value', y='Cumulative fraction recovered')
   (rrplot(cumulative.fraction(X), 0, signif(max(X$total), 2), scales.labels, NULL) +
    geom_abline(slope=1/max(X$total), yintercept=0, linetype='dotted', size=I(.35/ggplot2:::.pt), color='black') +
@@ -136,16 +150,16 @@ rrplot.corr <- function(X) {
    theme(legend.position='right'))
 }
 
-rrplot.loci <- function(X, cutoff=10000) {
-  rrplot.dev(X[seq(1, nrow(X), 10),], 'Independent loci by tag p-value', cutoff)
+rrplot_loci <- function(X, cutoff=10000) {
+  rrplot_dev(X, 'Loci by tag p-value', cutoff)
 }
 
-rrplot.example <- function(X) {
+rrplot_example <- function(X) {
   scales.labels <- labs(x='SNP rank by p-value', y='Cumulative deviation')
-  rrplot(dev(X), 0, 6.2e6, scales.labels, NULL)
+  rrplot(dev(X), 0, signif(max(X$total), 2), scales.labels, NULL)
 }
 
-rrplot.clusters <- function(X) {
+rrplot_clusters <- function(X) {
   direct.labels <- geom_dl(aes(label=celltype),
                            method=list(cex=5/16,
                              last.points,
@@ -169,43 +183,45 @@ rrplot.clusters <- function(X) {
    scale_fill_brewer(palette='Dark2'))
 }
 
-rrplot.device <- function(X, aspect, type) {
+rrplot_device <- function(X, aspect, type) {
   panelsize <- 60 - margin
   h <- panelsize * length(table(X$phenotype))
   w <- (aspect * panelsize + margin) * length(table(X$feature))
   Cairo(file=sub('.in.gz$', sprintf('.%s', type), args[1]), type=type, width=w, height=h, units='mm', dpi='auto', family='Helvetica')
 }
 
-logp.ticks <- function(Y) {
+logp_ticks <- function(Y) {
   T <- rev(table(cut(Y$V5, labels=seq(1, 10), breaks=seq(0, 10), right=FALSE)))
   Z <- data.frame(thresh=names(T), rank=cumsum(T), row.names=NULL)
   geom_vline(aes(xintercept=rank), data=Z, linetype='dashed', size=I(.35 / ggplot2:::.pt))
 }
 
-chisq.ticks <- function(Y) {
+chisq_ticks <- function(Y) {
   T <- rev(table(cut(Y$V5, labels=seq(1, 10), breaks=qchisq(1 - 10 ** -seq(0, 10), 1), right=FALSE)))
   Z <- data.frame(thresh=names(T), rank=cumsum(T), row.names=NULL)
   ## write.table(Z, file='ticks', col.names=FALSE, row.names=FALSE, quote=FALSEn)
   geom_vline(aes(xintercept=rank), data=Z, linetype='dashed', size=I(.35 / ggplot2:::.pt))
 }
 
-id.ticks <- function(Y) {
+id_ticks <- function(Y) {
   colnames(Y) <- c('thresh', 'rank')
   geom_vline(aes(xintercept=rank), data=Y, linetype='dashed', size=I(.35 / ggplot2:::.pt))
 }
 
-rrplot.draw <- function(bin.file, assoc.file, aspect, type, ticks.fn, rrplot.fn, ...) {
-  X <- read.csv(gzfile(bin.file), header=FALSE)
+no_ticks <- function(Y) {
+  NULL
+}
+
+rrplot_draw <- function(bin.file, assoc.file, aspect, type, ticks.fn, rrplot_fn, ...) {
+  X <- read.csv(gzfile(bin.file), header=FALSE, col.names=c('total', 'phenotype', 'celltype', 'feature', 'count', 'expected'))
   Y <- read.table(gzfile(assoc.file), header=FALSE)
-  colnames(X) <- c('total', 'phenotype', 'celltype', 'feature', 'count', 'expected')
-  rrplot.device(X, as.numeric(aspect), type)
-  P <- do.call(rrplot.fn, list(X, ...)) + do.call(ticks.fn, list(Y))
+  rrplot_device(X, as.numeric(aspect), type)
+  P <- do.call(rrplot_fn, list(X, ...)) + do.call(ticks.fn, list(Y))
   t <- ggplot_gtable(ggplot_build(P))
   t$layout$clip[t$layout$name == 'panel'] <- 'off'
   grid.draw(t)
-  print(P)
   dev.off()
 }
 
 args <- commandArgs(TRUE)
-do.call(rrplot.draw, as.list(args))
+do.call(rrplot_draw, as.list(args))
