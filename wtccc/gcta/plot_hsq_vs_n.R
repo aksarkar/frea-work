@@ -1,16 +1,23 @@
 library(ggplot2)
 library(grid)
+library(plyr)
 library(Cairo)
 
 source("~/code/enr/plot/theme_nature.R")
 
 args <- commandArgs(TRUE)
 d <- read.table(args[1], header=0, sep=' ')
-d$V3 <- d$V3 + rnorm(length(d$V3)) * 1e-7
-p <- (ggplot(d, aes(x=V2, y=V3)) +
-      geom_violin(aes(group=V2), size=I(.25)) +
-      stat_summary(fun.y=mean, geom='line', color='red', size=I(.25)) +
-      geom_hline(yintercept=as.numeric(args[2]), size=I(.25)) +
+total_expectation_variance <-
+  ddply(d, .(V2), function (x) {
+    expected_value <- mean(x$V3)
+    total_variance <- var(x$V3) + mean(x$V4)
+    data.frame(y=expected_value, ymin=expected_value - sqrt(total_variance),
+               ymax=expected_value + sqrt(total_variance), m=median(x$V3))
+  })
+p <- (ggplot(total_expectation_variance, aes(x=V2, y=y, ymin=ymin, ymax=ymax)) +
+      geom_pointrange(size=I(.35 / ggplot2:::.pt)) +
+      geom_hline(yintercept=0, size=I(.25)) +
+      geom_hline(yintercept=as.numeric(args[2]), size=I(.25), linetype='dashed') +
       scale_y_continuous(name=expression(h[g]^2)) +
       scale_x_log10(name='Top n tags', labels=unique(d$V2), breaks=unique(d$V2)) +
       theme_nature +
