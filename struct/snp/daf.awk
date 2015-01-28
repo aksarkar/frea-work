@@ -3,7 +3,7 @@ BEGIN {
     OFS="\t"
 }
 
-$3 != "." && $8 !~ /AA=\./ {
+!/^#/ && $8 !~ /AA=\./ {
     split($8, a, ";")
     for (i in a) {
         split(a[i], b, "=")
