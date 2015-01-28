@@ -1,0 +1,6 @@
+library(plyr)
+args <- commandArgs(TRUE)
+data <- read.delim(gzfile(args[1]), header=FALSE)
+data$V1 <- sub("chr", "", data$V1)
+## data$V5 <- sqrt(qchisq(1 - 10 ** -data$V5, 1))
+d_ply(data, .(V1), function(X) {write.table(data.frame(snp=X$V4, pos=X$V3, ref=rep('A'), alt=rep('C'), z=X$V5), quote=FALSE, row.names=FALSE, file=sprintf("%s.txt", unique(X$V1)))})
