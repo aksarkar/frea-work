@@ -1,13 +1,18 @@
 """Peakshifting permutation test for functional enrichment
 
-Usage: python peakshift.py SNPS REGIONS N THRESH
+Usage: python peakshift.py SNPS REGIONS N THRESH MINSCORE
 
-Shifts regions by random offset in [-THRESH, THRESH] and counts the empirical
-frequency over N trials of observing as many overlaps as in the original data.
+Shift regions by random offset in [-THRESH, THRESH] and count the empirical
+frequency over N trials of observing as many loci with score greater than
+MINSCORE overlapping as in the original data.
 
-Expects SNPS and REGIONS to be sorted zero-based BED files. Writes
-empirical count of trials with as many overlaps, actual count of overlaps, and
-mean and variance of overlaps over the shifted data sets on stdout.
+Expects SNPS and REGIONS to be sorted zero-based BED files. Writes to stdout:
+
+- observed count of overlaps
+- mean of count of overlaps over the shifted data sets
+- variance ...
+- Kolmogorov--Smirnov p-value for normality
+- empirical p-value
 
 Author: Abhishek Sarkar <aksarkar@mit.edu>
 
@@ -18,17 +23,19 @@ import gzip
 import itertools
 import operator
 import os
+import math
 import random
+import signal
 import sys
 
 import scipy.stats
 
-def handle(filename, loader):
+def handle(filename, loader, *args):
     def helper(fn):
         with fn(filename, 'rt') as f:
-            return loader(f)
+            return loader(f, *args)
     if filename == '-':
-        return loader(sys.stdin)
+        return loader(sys.stdin, *args)
     _, ext = os.path.splitext(filename)
     if ext == '.bz2':
         return helper(bz2.open)
@@ -37,18 +44,15 @@ def handle(filename, loader):
     else:
         return helper(open)
 
-def load_snps(f):
+def load_snps(f, score_thresh):
     snps_raw = (line.split() for line in f)
     head = collections.defaultdict(list)
-    tail = collections.defaultdict(list)
     for k, g in itertools.groupby(snps_raw, key=operator.itemgetter(0)):
-        parsed = ((int(pos), float(score)) for _, pos, _, _, score in g)
-        for p, s in parsed:
-            if s >= 2.214570:
-                head[k].append(p)
-            else:
-                tail[k].append(p)
-    return head, tail
+        parsed = ((int(pos), name, float(score)) for _, pos, _, name, score in g)
+        for p, n, s in parsed:
+            if s >= score_thresh:
+                head[k].append((p, n, s))
+    return head
 
 def load_regions(f):
     regions_raw = (line.split() for line in f)
@@ -58,44 +62,48 @@ def load_regions(f):
 def isect(snps, regions):
     region_iter = iter(regions)
     start, end = next(region_iter)
-    for snp in snps:
+    for snp, name, score in snps:
         while end < snp:
             start, end = next(region_iter)
         if snp < start:
             continue
         if end > snp:
-            yield snp
-
-def noverlaps(snps, regions):
-    inside, outside = 0, 0
-    for k in snps:
-        inside += len(list(isect(snps[k], regions.get(k, []))))
-        outside += len(snps[k]) - inside
-    return inside, outside
+            yield name, score
 
 def trial(snps, regions, offsets=None):
     if offsets is not None:
         regions = {k: [(s + o, e + o) for (s, e), o in zip(v, offsets)]
                    for k, v in regions.items()}
-    head, tail = snps
-    return noverlaps(head, regions)[0], noverlaps(tail, regions)[0]
+    overlaps = (x for k in snps for x in isect(snps[k], regions.get(k, [])))
+    loci = itertools.groupby(sorted(overlaps, reverse=True), key=operator.itemgetter(0))
+    return len([k for k, g in loci])
+
+def moments(xs):
+    running_mean = xs.pop(0)
+    running_variance = 0
+    for i, x in enumerate(xs):
+        new_mean = running_mean + (x - running_mean) / (i + 2)
+        running_variance += (x - running_mean) * (x - new_mean)
+        running_mean = new_mean
+    running_variance /= ntrials
+    return running_mean, running_variance
 
 def test(snps, regions, thresh):
     X = trial(snps, regions)
     offsets = ((-1 if random.random() > .5 else 1) * random.randrange(thresh)
                for _ in itertools.count())
-    running_mean = trial(snps, regions, offsets)
-    for i in range(ntrials - 1):
-        Y = trial(snps, regions, offsets)
-        running_mean = [r + (y - r) / (i + 2) for r, y in zip(running_mean, Y)]
-    return scipy.stats.fisher_exact([X, running_mean], alternative='greater')
+    Y = [trial(snps, regions, offsets) for _ in range(ntrials)]
+    mean, variance = moments(Y)
+    _, p = scipy.stats.kstest(Y, scipy.stats.norm(mean, math.sqrt(variance)).cdf)
+    exact_p = (1 + len([y for y in Y if y >= X])) / (1 + ntrials)
+    return X, mean, variance, p, exact_p
 
 if __name__ == '__main__':
+    random.seed(0)
+    signal.signal(signal.SIGPIPE, signal.SIG_DFL)
     if sys.argv[1] == sys.argv[2] == '-':
         print('error: SNPS and REGIONS cannot both be -')
         sys.exit(1)
-    snps = handle(sys.argv[1], load_snps)
-    regions = handle(sys.argv[2], load_regions)
     ntrials = int(sys.argv[3])
     if ntrials <= 0:
         print('error: N must be positive')
@@ -104,4 +112,11 @@ if __name__ == '__main__':
     if thresh <= 0:
         print('error: thresh must be positive')
         sys.exit(1)
-    print('{:.3f} {:.3f}'.format(*test(snps, regions, thresh)))
+    score_thresh = int(sys.argv[5])
+    if score_thresh <= 0:
+        print('error: score_thresh must be positive')
+        sys.exit(1)
+    snps = handle(sys.argv[1], load_snps, score_thresh)
+    regions = handle(sys.argv[2], load_regions)
+    result = test(snps, regions, thresh)
+    print(' '.join('{:.3f}'.format(x) for x in result))
