@@ -69,7 +69,7 @@ hyperg.plot <- function(X) {
 slice.plot <- function(X) {
     X$y <- (X$V5 - X$V6) / sqrt(X$V7)
     p <- stats::p.adjust(1 - pnorm(X$y), 'fdr')
-    thresh <- max(X$y[which(p > 1e-4)])
+    thresh <- max(X$y[which(p > 1e-4)], 1e-4)
     (ggplot(X, aes(x=x, y=y, fill=x)) +
      geom_bar(stat='identity') +
      geom_hline(yintercept=thresh, color='red', size=.35 / ggplot2:::.pt) +
