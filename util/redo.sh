@@ -1,5 +1,4 @@
 #!/bin/bash
-# Usage: redo.sh LOG JOBLIST
+# Usage: redo.sh JOBLIST
 set -e
-grep Exited$ $1 | grep -o '\[[0-9]\+\]' | tr -d '[]' | sed s/$/p/ | sed -nf - $2
-
+awk 'NR > 1 && ! /code 0/' | perl -ne 'm/(?:\.)([0-9]+)/; print $1 . "p\n"' | sed -nf - $1
