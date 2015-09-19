@@ -53,7 +53,7 @@ markers=${1?"$0: missing markers"}
 features=${2?"$0: missing features"}
 binsize=${3-1000}
 phenotype=$(basename $markers | sed -r "s/.bed.*//")
-f=$(echo $features | sed "s#.*features##" | cut -d/ -f2)${mask+$mod$(basename $mask | sed "s/.bed.*//")}
+f=$(echo $features | sed "s#.*features##" | cut -d/ -f2)${op+-$op}${mask+$mod$(basename $mask | sed "s/.[^.]*.gz//")}
 c=$(echo $features | sed "s#.*features##" | cut -d/ -f3- | \
     sed -r "s/.bed.*//")
 {
