@@ -3,7 +3,7 @@ NR == 1 {
     split(FILENAME, meta, ".")
 }
 
-$1 == "V(G1)/Vp_L" {
-    print meta[2], meta[3], $2, $3, meta[1]
+/G0/ {
+    print meta[2], meta[3], $2, $4, meta[1]
     exit
 }

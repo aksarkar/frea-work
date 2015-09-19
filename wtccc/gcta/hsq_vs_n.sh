@@ -6,31 +6,40 @@
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
 set -u
 set -e
-PREFIX=/broad/compbio/aksarkar/projects/gwas/wtccc1/EC21
-H2G=$PREFIX/results/gcta/h2g-all-samples
-QC=$PREFIX/results/qc/merge/qc.gcta
-GCTA="gcta64-1.24 --thread-num 16"
-LDAK="ldak.4.5 --bfile $QC --weights $PREFIX/results/ldak/chunks/weightsALL"
+
+PREFIX=/broad/hptmp/aksarkar/haplotypes
+QC=$PREFIX/T1D-clean
 CUTOFFS=(1000 2000 3000 4000 5000 7500 10000 20000 30000 40000 50000 100000 200000)
 
+PCGC="java -jar $HOME/.local/src/PCGCRegression/java-pcgc/PCGCRegression.jar"
+PRINT='parallel -j1 echo :::'
+export LC_ALL=C
+
 pheno=${1?"missing phenotype"}
-p=$(basename $pheno .txt)
+p=$(basename $pheno .pheno)
 fold=${2?"missing fold"}
-pushd $TMPDIR
+MAKE_GRM="gcta64-1.24 --thread-num ${NSLOTS:-1} --bfile $QC --keep $p.$fold.keep --make-grm"
+log=$p.$fold.log
 if [[ $pheno = "random" ]]
 then
-    pheno="$PREFIX/results/gcta/h2g-all-samples/t1d.txt"
-    awk '{print $1, $2}' $pheno >$TMPDIR/$p.$fold.test
-    cut -f2 $QC.bim | python $HOME/code/wtccc/gcta/random_order.py $fold >$TMPDIR/$p.$fold.txt
+    pheno="$PREFIX/T1D.pheno"
+    awk '{print $1, $2}' $pheno >$p.$fold.test
+    cut -f2 $QC.bim | python $HOME/code/wtccc/gcta/random_order.py $fold >$p.$fold.txt
 else
-    python $HOME/code/wtccc/gcta/testset.py $fold <$pheno >$TMPDIR/$p.$fold.test
-    plink --bfile $QC --remove $TMPDIR/$p.$fold.test --pheno $pheno --1 --logistic --out $TMPDIR/$p.$fold &>/dev/null
-    sort -k9g $TMPDIR/$p.$fold.assoc.logistic | awk 'NR > 1 {print $2}' >$TMPDIR/$p.$fold.txt
+    python $HOME/code/wtccc/gcta/testset.py $fold <$pheno >$p.$fold.test
+    plink --memory 4096 --bfile $QC --remove $p.$fold.test --pheno $pheno --1 --logistic --out $p.$fold &>/dev/null
+    sort -k9g $p.$fold.assoc.logistic | awk 'NR > 1 {print $2}' >$p.$fold.txt
 fi
-for i in ${CUTOFFS[@]}
+comm -12 <(sed "s/\t/ /" $PREFIX/T1D.grm.id | sort) <(sort $p.$fold.test) >$p.$fold.keep
+
+$PRINT $p.$fold{,.c} >$p.$fold.grms
+$PRINT "$PREFIX/T1D" "$PREFIX/T1D" >$p.$fold.subtractvecs
+$PRINT "grmlist=$p.$fold.grms" "subtractvecs=$p.$fold.subtractvecs" "phenos=$pheno" "covars=$PREFIX/T1D.eigenvec" "prevalence=0.005" >$p.$fold.params
+for n in ${CUTOFFS[@]}
 do
-    awk -vn=$i -vp=$p -vf=$fold 'NR <= n {print >p"."f"."1} NR > n {print >p"."f"."2}' $TMPDIR/$p.$fold.txt
-    $LDAK --cut-kins $p.$fold --partition-prefix $p.$fold. --partition-number 2 >$TMPDIR/$p.$fold.$i.ldak.log
-    parallel -j1 $LDAK --calc-kins $p.$fold --partition {} ::: 1 2 >$TMPDIR/$p.$fold.$i.ldak.log.1
-    $GCTA --mgrm <(parallel -j1 echo $TMPDIR/$p.$fold/kinship{} ::: 1 2) --keep $p.$fold.test --remove $H2G/prune.txt --qcovar $H2G/pca.covar.eigenvec --reml --pheno $H2G/$p.txt --prevalence .005 --out $p.$fold.$i &>$TMPDIR/$p.$fold.$i.gcta.log
+    head -n$n $p.$fold.txt >$p.$fold.head
+    $MAKE_GRM --extract $p.$fold.head --out $p.$fold &>$log
+    $MAKE_GRM --exclude $p.$fold.head --out $p.$fold.c &>$log
+    $PCGC $p.$fold.params >$p.$fold.$n.hsq
 done
+rm -f $p.$fold.{assoc.logistic,c.*,head,grm*,keep,params,subtractvecs,test,txt}
