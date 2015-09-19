@@ -27,4 +27,4 @@ for row in data:
         attrs['gene_status'] == '"KNOWN"'):
         gene_id = ensembl_id.search(attrs['gene_id'])
         if gene_id is not None:
-            print(chromosome, start, end, gene_id.group(), attrs['gene_name'][1:-1], sep='\t')
+            print(chromosome, start, end, gene_id.group(), attrs['gene_name'][1:-1], strand, sep='\t')
