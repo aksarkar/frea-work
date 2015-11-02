@@ -15,15 +15,13 @@ hsq_by_n <- ddply(read.table(args[1], header=0, sep=' '), .(V1, V5), inv_var, "O
 hsq_by_random_n <- ddply(read.table(args[2], header=0, sep=' '), .(V1, V5), inv_var, "Random")
 hsq <- rbind(hsq_by_n, hsq_by_random_n)
 all_sample_hsq <- read.table(args[3], header=0, sep=' ')
-p <- (ggplot(hsq, aes(x=V1, y=mean, ymin=mean - se, ymax=mean + se)) +
-      geom_line(aes(color=order), size=I(.25)) +
-      geom_ribbon(aes(fill=order), alpha=I(.1)) +
+p <- (ggplot(hsq, aes(x=V1, y=mean, ymin=mean - se, ymax=mean + se, color=order)) +
+      geom_line(size=I(.25)) +
+      geom_ribbon(alpha=I(.25)) +
       geom_hline(data=all_sample_hsq, aes(yintercept=V3), size=I(.25), linetype='dashed') +
-      geom_hline(yintercept=0, size=I(.25)) +
       scale_x_log10(name='Top n tags', labels=unique(hsq$V1), breaks=unique(hsq$V1)) +
       scale_y_continuous(name=expression(h[g]^2)) +
-      scale_color_manual(values=c("Observed"="red", "Random"="gray50")) +
-      scale_fill_manual(values=c("Observed"="red", "Random"="black")) +
+      scale_color_manual(values=c("Observed"="black", "Random"="red")) +
       facet_wrap(~ V5, ncol=2, scales='free') +
       theme_nature +
       theme(axis.title.y=element_text(angle=0),
