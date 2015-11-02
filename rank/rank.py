@@ -27,11 +27,13 @@ Author: Abhishek Sarkar <aksarkar@mit.edu>
 import csv
 import gzip
 import math
+import itertools
+import operator
 import sys
 
 import scipy.stats
 
-def pearson():
+def pearson(cohort):
     """Coroutine implementation of Pearson correlation
 
     https://groups.google.com/d/msg/sci.stat.math/HMrw3pWSvQs/-QP3BehUV1MJ
@@ -43,10 +45,15 @@ def pearson():
     sum_x_sq = 0
     sum_y_sq = 0
     sum_xy = 0
+    def output():
+        print(n, cohort, sum_xy / math.sqrt(sum_x_sq * sum_y_sq))
+    cutoffs = set(x * y for x, y in itertools.product([1, 2, 3, 4, 5], [10 ** i for i in range(3, 7)]))
     try:
         while True:
             x, y = yield
             n += 1
+            if n in cutoffs:
+                output()
             dev_x = x - mean_x
             dev_y = y - mean_y
             mean_x += dev_x / n
@@ -55,10 +62,10 @@ def pearson():
             sum_y_sq += dev_y * (y - mean_y)
             sum_xy += dev_x * (y - mean_y)
     except GeneratorExit:
-        print(n, sum_xy / math.sqrt(sum_x_sq * sum_y_sq))
+        output()
 
-def hold_out_cor(zscores):
-    targets = [pearson() for _ in weights] + [pearson()]
+def hold_out_cor(zscores, cohorts):
+    targets = [pearson(cohort) for cohort in cohorts] + [pearson("Overall")]
     for t in targets:
         next(t)
     for row in zscores:
@@ -69,24 +76,22 @@ def hold_out_cor(zscores):
     for t in targets:
         t.close()
 
-samples = [(1525, 10608),  # wtccc
-           (867, 1041),    # narac1
-           (902, 4510),    # narac2
-           (1173, 1089),   # eira
-           (489, 1472),    # canada
-           (483, 1449)]    # brass
+cohorts = ["WTCCC", "NARAC1", "NARAC2", "EIRA", "CANADA", "BRASS"]
+samples = [(1525, 10608),  
+           (867, 1041),    
+           (902, 4510),    
+           (1173, 1089),   
+           (489, 1472),    
+           (483, 1449)]    
 total_samples = sum(sum(cohort) for cohort in samples)
 weights = [math.sqrt(sum(cohort) / total_samples) for cohort in samples]
 total_weight = sum(weights)
 
-with gzip.open("/broad/compbio/aksarkar/data/gwas-summary-stats/ra/ra.txt.gz") as f:
+with gzip.open("/broad/compbio/aksarkar/data/gwas-summary-stats/ra/ra.txt.gz", "rt") as f:
     data = (line.split() for line in f)
     next(data)  # skip header
     filter_chr6 = (row for row in data if row[1] != '6')
     projection = (row[11:17] + row[-4:-3] for row in filter_chr6)
     filter_missing = (row for row in projection if 'NA' not in row)
-    zscores = ([float(x) for x in row] for row in filter_missing)
-    thresh = scipy.stats.chi2(1).isf(1e-3)
-    high_pass = (row for row in zscores if
-                 row[-1] * row[-1] > thresh)
-    hold_out_cor(high_pass)
+    zscores = sorted(([float(x) for x in row] for row in filter_missing), key=operator.itemgetter(-1))
+    hold_out_cor(zscores, cohorts)
