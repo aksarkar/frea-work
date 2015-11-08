@@ -91,12 +91,17 @@ rrplot_elbow <- function(X) {
   geom_vline(xintercept=rank_cutoff, color='red', size=I(.5 / ggplot2:::.pt))
 }
 
-rrplot <- function(X, zero, cutoff, scales.labels, direct.labels) {
+rrplot <- function(X, zero, cutoff, scales.labels, direct.labels, plot_elbow=TRUE) {
   stopifnot(is.data.frame(X))
   stopifnot(is.numeric(zero))
   stopifnot(is.numeric(cutoff))
   stopifnot(cutoff > 0)
-  elbow <- rrplot_elbow(X)
+  if (plot_elbow) {
+    elbow <- rrplot_elbow(X)
+  }
+  else {
+    elbow <- geom_hline(yintercept=zero, color='black', size=I(0))
+  }
   X <- X[X$total <= cutoff, ]
   (ggplot(X, aes(x=total, y=y, color=factor(celltype))) +
    geom_line(size=I(.35 / ggplot2:::.pt)) +
@@ -156,7 +161,7 @@ rrplot_loci <- function(X, cutoff=10000) {
 
 rrplot_example <- function(X) {
   scales.labels <- labs(x='SNP rank by p-value', y='Cumulative deviation')
-  rrplot(dev(X), 0, signif(max(X$total), 2), scales.labels, NULL)
+  rrplot(dev(X), 0, signif(max(X$total), 2), scales.labels, NULL, plot_elbow=FALSE)
 }
 
 rrplot_clusters <- function(X) {
