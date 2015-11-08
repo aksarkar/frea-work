@@ -1,7 +1,18 @@
+""" Join SNP lists to 1KG reference information
+
+Author: Abhishek Sarkar <aksarkar@mit.edu>
+
+"""
+import collections
 import gzip
 import itertools
 import operator
+import math
 import sys
+
+bedtools_format = [str, int, int, str, float]
+plink_format = [lambda x: 'chr{}'.format(x), str, int, int, str, str]
+legend_format = [str, int, str, str, str]
 
 def parse(types, iterable):
     for row in iterable:
@@ -25,19 +36,7 @@ def join(bed, ref, key, key2=None):
         else:
             k2, g2 = next(ref_buckets)
 
-def output(bed_entry, ref_entry):
-    # chr_, _, _, _, score = bed_entry
-    chr_, _, b0, b1, score = bed_entry
-    name, pos, a0, a1 = ref_entry
-    if len(a0) > 1:
-        a0 = 'I{}'.format(len(a0))
-        a1 = 'D'
-    elif len(a1) > 1:
-        a0 = 'D'
-        a1 = 'I{}'.format(len(a1))
-    if (b0, b1) != (a0, a1) and (b1, b0) != (a0, a1):
-        print(chr_, pos, b0, b1, a0, a1, file=sys.stderr)
-        return
+def get_pouyak_name(chr_, name, pos, a0, a1):
     if len(a0) <= len(a1):
         start = pos
         end = pos
@@ -49,17 +48,53 @@ def output(bed_entry, ref_entry):
         start = pos + len(a1)
         end = pos + len(a0) - len(a1)
         delta = ""
-    print(chr_, pos - 1, pos + len(a0) - 1, '|'.join([name, chr_, str(end), str(end), delta]), score, sep='\t')
-    
-if __name__ == '__main__':
-    import math
-    rawdata = (line.split() for line in sys.stdin)
-    next(rawdata)
-    # bed = parse([str, int, int, str, float], (line.split() for line in sys.stdin))
-    bed = ([row[0], int(row[4]), row[2], row[3], -math.log(float(row[8]), 10)] for row in rawdata)
-    for k, g in itertools.groupby(bed, key=operator.itemgetter(0)):
+    return '|'.join([name, chr_, str(end), str(end), delta])
+
+def get_plink_alleles(a0, a1):
+    if len(a0) > 1:
+        a0 = 'I{}'.format(len(a0))
+        a1 = 'D'
+    elif len(a1) > 1:
+        a0 = 'D'
+        a1 = 'I{}'.format(len(a1))
+    return a0, a1
+
+def is_alignable(a0, a1, b0, b1):
+    return (b0, b1) == (a0, a1) or (b1, b0) == (a0, a1)
+
+
+def lookup(input_file, input_format, output_fn, input_sort_key=operator.itemgetter(0),
+         input_join_key=operator.itemgetter(1), ref_join_key=operator.itemgetter(1)):
+    """Lookup input SNPs in 1KG
+
+    input_file - file-like object
+    input_format - list of column types
+    output_fn - function to output hits
+    input_sort_key - index of chromosome column
+    input_join_key - key to lookup in 1KG
+    ref_join_key - key to match in 1KG
+    """
+    data = (line.split('\t') for line in input_file)
+    bed = parse(input_format, data)
+    for k, g in itertools.groupby(bed, key=input_sort_key):
         with gzip.open('/broad/compbio/aksarkar/data/1kg/ALL.{}.integrated_phase1_v3.20101123.snps_indels_svs.genotypes.nosing.legend.gz'.format(k), 'rt') as f:
             next(f)
-            ref = parse([str, int, str, str], (line.split() for line in f))
-            for pair in join(g, ref, operator.itemgetter(1)):
-                output(*pair)
+            ref = parse(legend_format, (line.split() for line in f))
+            keep = (x for x in ref if x[-1] == 'SNP')
+            for pair in join(g, keep, input_join_key, ref_join_key):
+                output_fn(*pair)
+
+if __name__ == '__main__':
+    def output(bed_entry, ref_entry, check_strand=False):
+        _, chr_, _, score = bed_entry
+        name, pos, a0, a1, _ = ref_entry
+        if score == 0:
+            print(chr_, pos, file=sys.stderr)
+            return
+        if check_strand and not is_alignable(a0, a1, b0, b1):
+            print(chr_, pos, b0, b1, a0, a1, file=sys.stderr)
+            return
+        print(chr_, pos - 1, pos + len(a0) - 1, get_pouyak_name(chr_, name, pos, a0, a1), -math.log10(score), sep='\t')
+    with gzip.open('/broad/compbio/aksarkar/data/gwas-summary-stats/t1d_bradfield_10.1371_journal.pgen.1002293/hg19_gwas_t1d_bradfield_4_18_0.gz', 'rt') as f:
+        next(f)
+        lookup(f, [str, lambda x: 'chr{}'.format(x), int, float], output, input_sort_key=operator.itemgetter(1), input_join_key=operator.itemgetter(2))
