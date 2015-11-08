@@ -6,20 +6,14 @@ BEGIN {
     if (field == "") {
         field = "t1d_frequentist_add_ml_pvalue"
     }
+    k = 0
 }
 
-NR == 1 {
-    split(FILENAME, meta, ".")
-    chromosome = "chr" meta[1]
-    split($0, header)
-    for (i = 1; i < length(header); i++) {
-        if ($i == field) {
-            k = i
-        }
-    }
+/^#/ {
+    next
 }
 
-NR > 1 && $9 > info && $k > -1 {
+k > 0 && $9 > info {
     if (field ~ /pvalue/) {
         score = -log($k) / log(10)
     }
@@ -42,6 +36,15 @@ NR > 1 && $9 > info && $k > -1 {
         delta = ""
     }
 
-    id = $2"|" chromosome "|" start "|" end "|" delta
+    id = $2 "|" chromosome "|" start "|" end "|" delta
     print chromosome, $4 - 1, $4 + length($5) - 1, id, score
+}
+
+k == 0 {
+    split($0, header)
+    for (i = 1; i < length(header); i++) {
+        if ($i == field) {
+            k = i
+        }
+    }
 }
