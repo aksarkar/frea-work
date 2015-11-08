@@ -20,4 +20,4 @@ set -u
 # UGER munges LD_LIBRARY_PATH and doesn't pass it through even with -V, so fix
 # it up here
 export LD_LIBRARY_PATH=$LIBRARY_PATH
-awk -vn=$SGE_TASK_LAST -vi=$SGE_TASK_ID 'NR % n == i - 1' $1 | parallel -j1 --halt 1 -t
+awk -vn=$SGE_TASK_LAST -vi=$SGE_TASK_ID 'NR % n == i - 1' $1 | parallel -j1 --halt now,fail=1 -t
