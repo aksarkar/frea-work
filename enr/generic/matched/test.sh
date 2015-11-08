@@ -3,6 +3,14 @@
 #
 # Usage: bash test.sh GWAS THRESH TABLE FEATURE
 #
+# GWAS - Sorted BED file of summary statistics. Column 5 must contain -log10(p)
+#
+# THRESH - -log10(p) threshold for top SNPs
+#
+# TABLE - lookup table for resampling
+#
+# FEATURE - BED file of regions of interest
+#
 # Author: Abhishek Sarkar <aksarkar@mit.edu>
 set -e
 set -u
