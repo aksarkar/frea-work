@@ -197,6 +197,19 @@ rrplot_clusters <- function(X) {
    scale_fill_brewer(palette='Dark2'))
 }
 
+rrplot_sim <- function(X, cutoff=30000) {
+  Y <- ddply(X, .(phenotype), dev)
+  W <- ddply(Y, .(total, celltype),
+             function(A) {data.frame(y=quantile(A$y, .5),
+                                     ymin=quantile(A$y, .05),
+                                     ymax=quantile(A$y, .95))})
+  print(head(W))
+  (rrplot(W, zero=0, cutoff=cutoff,
+          scales.labels=labs(x='SNPs by p-value', y='Cumulative deviation'),
+          direct.labels=NULL, plot_elbow=FALSE) +
+   geom_ribbon(aes(ymin=ymin, ymax=ymax, fill=factor(celltype)), color=NA, alpha=.15))
+}
+
 rrplot_device <- function(X, aspect, type) {
   panelsize <- 60 - margin
   h <- panelsize * length(table(X$phenotype))
