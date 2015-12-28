@@ -118,8 +118,6 @@ rrplot <- function(X, zero=0, cutoff=NULL, scales.labels=NULL, direct.labels=NUL
    theme_nature +
    theme(legend.position='none',
          axis.text=element_text(size=5),
-         axis.text.y=element_blank(),
-         axis.ticks.y=element_blank(),
          plot.margin=unit(c(7 / ggplot2:::.pt, margin, 0, 0), 'mm')))
 }
 
