@@ -87,22 +87,25 @@ rrplot_elbow <- function(X) {
     hull[which(diff(sign(ddy)) != 0)[1] + 1,]$total
   })
   rank_cutoff <- max(inflections[!is.na(inflections)])
-  print(rank_cutoff)
+  print(sprintf("%s %d", args[1], rank_cutoff))
   geom_vline(xintercept=rank_cutoff, color='red', size=I(.5 / ggplot2:::.pt))
 }
 
-rrplot <- function(X, zero, cutoff, scales.labels, direct.labels, plot_elbow=TRUE) {
+rrplot <- function(X, zero=0, cutoff=NULL, scales.labels=NULL, direct.labels=NULL, plot_elbow=TRUE) {
   stopifnot(is.data.frame(X))
   stopifnot(is.numeric(zero))
-  stopifnot(is.numeric(cutoff))
-  stopifnot(cutoff > 0)
   if (plot_elbow) {
     elbow <- rrplot_elbow(X)
   }
   else {
     elbow <- geom_hline(yintercept=zero, color='black', size=I(0))
   }
-  X <- X[X$total <= cutoff, ]
+  if (is.null(cutoff)) {
+      cutoff <- max(X$total)
+  }
+  else {
+      X <- X[X$total <= cutoff, ]
+  }
   (ggplot(X, aes(x=total, y=y, color=factor(celltype))) +
    geom_line(size=I(.35 / ggplot2:::.pt)) +
    geom_hline(yintercept=zero, color='black', size=I(.5 / ggplot2:::.pt)) +
