@@ -18,11 +18,9 @@ do
             shift
             ;;
         -i|--intersect)
-            filter=intersect
-            sorted="-sorted"
-            mod="+"
+            dointersect=1
             shift
-            mask=$1
+            imask=$1
             shift
             ;;
         -l|--ld-correction)
@@ -35,7 +33,7 @@ do
             shift
             ;;
         -s|--subtract)
-            filter=subtract
+            dosubtract=1
             mod="-"
             shift
             mask=$1
@@ -64,11 +62,19 @@ c=$(echo $features | sed "s#.*features##" | cut -d/ -f3- | \
         zcat $features
     fi
 } | \
-    bedtools intersect -a $1 -b stdin -sorted -c | \
+    bedtools intersect -sorted -nobuf -c -wa -a $1 -b stdin | \
+    {
+        if [[ ! -z $dointersect ]]
+        then
+            bedtools intersect -sorted -nobuf -wa -a stdin -b $imask
+        else
+            cat
+        fi
+    } | \
 {
-    if [[ ! -z $filter ]]
+    if [[ ! -z $dosubtract ]]
     then
-        bedtools $filter -a stdin -b $mask $sorted
+        bedtools intersect -sorted -nobuf -wa -v -a stdin -b $mask
     else
         cat
     fi
