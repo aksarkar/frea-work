@@ -212,8 +212,8 @@ rrplot_sim <- function(X, cutoff=30000) {
 
 rrplot_device <- function(X, aspect, type) {
   panelsize <- 60 - margin
-  h <- panelsize * length(table(X$phenotype))
-  w <- (aspect * panelsize + margin) * length(table(X$feature))
+  h <- panelsize
+  w <- (aspect * panelsize + margin)
   Cairo(file=sub('.in.gz$', sprintf('.%s', type), args[1]), type=type, width=w, height=h, units='mm', dpi='auto', family='Helvetica')
 }
 
@@ -239,11 +239,10 @@ no_ticks <- function(Y) {
   NULL
 }
 
-rrplot_draw <- function(bin.file, assoc.file, aspect, type, ticks.fn, rrplot_fn, ...) {
+rrplot_draw <- function(bin.file, aspect, type, rrplot_fn, ...) {
   X <- read.csv(gzfile(bin.file), header=FALSE, col.names=c('total', 'phenotype', 'celltype', 'feature', 'count', 'expected'))
-  Y <- read.table(gzfile(assoc.file), header=FALSE)
   rrplot_device(X, as.numeric(aspect), type)
-  P <- do.call(rrplot_fn, list(X, ...)) + do.call(ticks.fn, list(Y))
+  P <- do.call(rrplot_fn, list(X, ...))
   t <- ggplot_gtable(ggplot_build(P))
   t$layout$clip[t$layout$name == 'panel'] <- 'off'
   grid.draw(t)
