@@ -144,8 +144,16 @@ rrplot_derivative <- function(X, cutoff=50000) {
   rrplot(derivative(dev(X)), 0, as.numeric(cutoff), labs(x='Top SNPs by p-value', y='Derivative of cumulative deviation'), direct.labels)
 }
 
-rrplot_snps <- function(X, cutoff=50000) {
+rrplot_snps <- function(X, cutoff=30000) {
   rrplot_dev(X, 'SNP rank by p-value', cutoff)
+}
+
+rrplot_cdf <- function(X) {
+    rrplot(cumulative.fraction(X),
+           cutoff=30000,
+           scales.labels=labs(xlab='SNP rank by p-value', ylab='Cumulative fraction'),
+           direct.labels=NULL,
+           plot_elbow=FALSE)
 }
 
 rrplot_corr <- function(X) {
