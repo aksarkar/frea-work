@@ -24,7 +24,7 @@ p <- (ggplot(hsq, aes(x=V2, y=mean, ymin=mean - se, ymax=mean + se)) +
       scale_y_continuous(name=expression(h[g]^2)) +
       scale_color_manual(values=c("Observed"="red", "Random"="gray50"), name="Ordering") +
       scale_fill_manual(values=c("Observed"="red", "Random"="gray50"), name="Ordering") +
-      facet_wrap(~ V5, ncol=2, scales='free') +
+      facet_wrap(~ V5, ncol=4, scales='free') +
       theme_nature +
       theme(axis.title.y=element_text(angle=0),
             axis.text=element_text(size=5),
@@ -32,6 +32,6 @@ p <- (ggplot(hsq, aes(x=V2, y=mean, ymin=mean - se, ymax=mean + se)) +
             legend.position="right",
             panel.margin=unit(rep(1, 4), 'mm')
             ))
-Cairo(dpi='auto', file=sub('.txt', '.pdf', args[1]), height=190, type='pdf', units='mm', width=160)
+Cairo(dpi='auto', file=sub('.txt', '.pdf', args[1]), height=80, type='pdf', units='mm', width=210)
 print(p)
 dev.off()
