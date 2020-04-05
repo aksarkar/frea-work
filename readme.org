@@ -1,0 +1,5 @@
+* Functional Region Enrichment Analysis
+
+  This repository contains code which eventually became
+  [[https://github.com/aksarkar/frea][frea]] and
+  [[https://github.com/aksarkar/frea-pipeline][frea-pipeline]].
